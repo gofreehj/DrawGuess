@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  drawing-game:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+    env_file:
+      - .env.production
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - drawing-game-network
+
+networks:
+  drawing-game-network:
+    driver: bridge
+
+volumes:
+  game-data:
+    driver: local

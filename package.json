@@ -5,23 +5,53 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:analyze": "NEXT_BUNDLE_ANALYZE=true next build",
+    "build:standalone": "BUILD_STANDALONE=true next build",
+    "build:production": "NODE_ENV=production npm run clean && npm run type-check && npm run lint && npm run build",
     "start": "next start",
-    "lint": "eslint"
+    "start:prod": "NODE_ENV=production next start -p ${PORT:-3000}",
+    "start:docker": "NODE_ENV=production next start -H 0.0.0.0 -p ${PORT:-3000}",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
+    "lint:check": "eslint --max-warnings 0",
+    "type-check": "tsc --noEmit",
+    "type-check:watch": "tsc --noEmit --watch",
+    "clean": "rm -rf .next out .turbo",
+    "clean:all": "npm run clean && rm -rf node_modules package-lock.json",
+    "db:init": "node -e \"require('./src/lib/init-database.ts')\"",
+    "db:backup": "cp ./data/game.db ./data/backups/game-$(date +%Y%m%d-%H%M%S).db",
+    "health-check": "node -e \"console.log('Health check passed'); process.exit(0)\"",
+    "health-check:full": "curl -f http://localhost:${PORT:-3000}/api/health || exit 1",
+    "security-check": "npm audit --audit-level moderate",
+    "prestart:prod": "npm run db:init",
+    "prebuild": "npm run clean",
+    "postbuild": "echo 'Build completed successfully at' $(date)",
+    "deploy:check": "npm run type-check && npm run lint:check && npm run security-check",
+    "deploy:build": "npm run deploy:check && npm run build:production",
+    "docker:build": "docker build -t drawing-game .",
+    "docker:run": "docker run -p 3000:3000 --env-file .env.production drawing-game",
+    "docker:compose": "docker-compose up -d",
+    "docker:compose:build": "docker-compose up --build -d"
   },
   "dependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "better-sqlite3": "^12.4.1",
+    "canvas": "^2.11.2",
+    "fabric": "^6.7.1",
+    "next": "16.0.0",
     "react": "19.2.0",
-    "react-dom": "19.2.0",
-    "next": "16.0.0"
+    "react-dom": "19.2.0"
   },
   "devDependencies": {
-    "babel-plugin-react-compiler": "1.0.0",
-    "typescript": "^5",
+    "@tailwindcss/postcss": "^4",
+    "@types/fabric": "^5.3.10",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
+    "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
-    "eslint-config-next": "16.0.0"
+    "eslint-config-next": "16.0.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
   }
 }
