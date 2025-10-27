@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getActivePrompts, createPrompt } from '@/lib/database';
+import { initializeDatabaseWithSeedData } from '@/lib/init-database';
 import { Prompt } from '@/types/game';
 import { createErrorResponse, ERROR_CODES, handleError, createErrorResponseFromAPIError } from '@/lib/error-handler';
 
@@ -9,6 +10,9 @@ import { createErrorResponse, ERROR_CODES, handleError, createErrorResponseFromA
  */
 export async function GET() {
   try {
+    // Initialize database with seed data if needed (especially for serverless environments)
+    initializeDatabaseWithSeedData();
+    
     const prompts = getActivePrompts();
     
     return NextResponse.json({

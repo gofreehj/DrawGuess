@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRandomPrompt } from '@/lib/database';
+import { initializeDatabaseWithSeedData } from '@/lib/init-database';
 import { createErrorResponse, ERROR_CODES, handleError, createErrorResponseFromAPIError } from '@/lib/error-handler';
 
 /**
@@ -8,6 +9,9 @@ import { createErrorResponse, ERROR_CODES, handleError, createErrorResponseFromA
  */
 export async function GET(request: NextRequest) {
   try {
+    // Initialize database with seed data if needed (especially for serverless environments)
+    initializeDatabaseWithSeedData();
+    
     const { searchParams } = new URL(request.url);
     const category = searchParams.get('category');
     const difficulty = searchParams.get('difficulty');

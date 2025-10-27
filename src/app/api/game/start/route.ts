@@ -1,10 +1,14 @@
 import { NextRequest } from 'next/server';
 import { getRandomPrompt, createGameSession } from '@/lib/database';
+import { initializeDatabaseWithSeedData } from '@/lib/init-database';
 import { createErrorResponse, ERROR_CODES, handleError, createErrorResponseFromAPIError } from '@/lib/error-handler';
 
 // API route for starting a new game
 export async function POST(request: NextRequest) {
   try {
+    // Initialize database with seed data if needed (especially for serverless environments)
+    initializeDatabaseWithSeedData();
+    
     // Get a random prompt from the database
     const prompt = getRandomPrompt();
     

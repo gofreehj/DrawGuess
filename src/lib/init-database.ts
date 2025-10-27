@@ -1,9 +1,17 @@
 import { initializeDatabase, createPrompt, getActivePrompts } from './database';
 
+// Track if database has been initialized to avoid repeated initialization
+let isInitialized = false;
+
 /**
  * Initialize database with tables and seed data
  */
 export function initializeDatabaseWithSeedData(): void {
+  // Skip if already initialized in this process
+  if (isInitialized) {
+    return;
+  }
+  
   try {
     console.log('Initializing database...');
     
@@ -15,6 +23,7 @@ export function initializeDatabaseWithSeedData(): void {
     const existingPrompts = getActivePrompts();
     if (existingPrompts.length >= 20) {
       console.log(`✓ Database already has ${existingPrompts.length} prompts`);
+      isInitialized = true;
       return;
     }
     
@@ -78,6 +87,9 @@ export function initializeDatabaseWithSeedData(): void {
     
     console.log(`✓ Successfully created ${createdCount} animal prompts`);
     console.log('✓ Database initialization completed');
+    
+    // Mark as initialized
+    isInitialized = true;
     
   } catch (error) {
     console.error('Database initialization failed:', error);

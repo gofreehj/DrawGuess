@@ -200,7 +200,14 @@ vercel switch
 **现象**：部署失败，提示找不到 package.json
 **解决**：确保 Root Directory 设置为 `DrawGuess`
 
-### 问题 2：环境变量未生效
+### 问题 2：数据库初始化失败
+**现象**：API 返回 "No prompts available in the database"
+**解决**：
+- 检查 `/api/health` 端点确认数据库状态
+- 确保应用已正确部署最新代码
+- Vercel 使用内存数据库，每次冷启动会自动初始化
+
+### 问题 3：环境变量未生效
 **现象**：应用运行但功能异常
 **解决**：
 ```bash
@@ -210,7 +217,7 @@ vercel env ls
 vercel --prod
 ```
 
-### 问题 3：构建失败
+### 问题 4：构建失败
 **现象**：TypeScript 或 ESLint 错误
 **解决**：
 ```bash
@@ -219,7 +226,7 @@ npm run build
 # 修复错误后重新部署
 ```
 
-### 问题 4：函数超时
+### 问题 5：函数超时
 **现象**：API 请求超时
 **解决**：检查 `vercel.json` 中的函数配置：
 ```json
@@ -232,7 +239,7 @@ npm run build
 }
 ```
 
-### 问题 5：区域配置错误
+### 问题 6：区域配置错误
 **现象**：部署时提示 "Invalid region selector"
 **解决**：移除 `vercel.json` 中的 `regions` 配置，让 Vercel 自动选择最优区域：
 ```json
@@ -247,14 +254,34 @@ npm run build
 
 ### 健康检查
 ```bash
-# 检查应用状态
+# 检查应用状态和数据库
 curl https://your-app.vercel.app/api/health
 
 # 预期响应
 {
-  "status": "ok",
-  "timestamp": "2024-01-01T00:00:00.000Z"
+  "success": true,
+  "data": {
+    "status": "healthy",
+    "database": {
+      "type": "memory",
+      "isServerless": true,
+      "promptsCount": 24,
+      "hasMinimumPrompts": true
+    }
+  }
 }
+```
+
+### 功能验证
+```bash
+# 测试随机提示词
+curl https://your-app.vercel.app/api/prompts/random
+
+# 测试所有提示词
+curl https://your-app.vercel.app/api/prompts
+
+# 测试游戏开始
+curl -X POST https://your-app.vercel.app/api/game/start
 ```
 
 ### 性能监控
