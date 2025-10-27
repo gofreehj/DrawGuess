@@ -1,8 +1,6 @@
 {
   "version": 2,
   "name": "drawguess",
-  "alias": ["drawguess"],
-  "regions": ["hkg1", "sin1", "nrt1"],
   "build": {
     "env": {
       "NODE_ENV": "production",
