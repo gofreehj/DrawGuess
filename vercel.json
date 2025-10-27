@@ -1,0 +1,80 @@
+{
+  "version": 2,
+  "name": "drawguess",
+  "alias": ["drawguess"],
+  "regions": ["hkg1", "sin1", "nrt1"],
+  "build": {
+    "env": {
+      "NODE_ENV": "production",
+      "NEXT_TELEMETRY_DISABLED": "1"
+    }
+  },
+  "env": {
+    "AI_PROVIDER": "@ai_provider",
+    "OPENAI_API_KEY": "@openai_api_key",
+    "OPENAI_API_URL": "@openai_api_url",
+    "GEMINI_API_KEY": "@gemini_api_key",
+    "GEMINI_API_URL": "@gemini_api_url",
+    "AI_MODEL": "@ai_model",
+    "DATABASE_PATH": "@database_path",
+    "NEXT_PUBLIC_APP_NAME": "@next_public_app_name",
+    "NEXT_PUBLIC_MAX_DRAWING_SIZE": "@next_public_max_drawing_size",
+    "NEXTAUTH_URL": "@nextauth_url",
+    "NEXTAUTH_SECRET": "@nextauth_secret",
+    "NEXT_PUBLIC_ENABLE_ANALYTICS": "@next_public_enable_analytics",
+    "NEXT_PUBLIC_SENTRY_DSN": "@next_public_sentry_dsn",
+    "RATE_LIMIT_MAX_REQUESTS": "@rate_limit_max_requests",
+    "RATE_LIMIT_WINDOW_MS": "@rate_limit_window_ms",
+    "ALLOWED_ORIGINS": "@allowed_origins"
+  },
+  "functions": {
+    "src/app/api/**/*.ts": {
+      "maxDuration": 30
+    }
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "origin-when-cross-origin"
+        }
+      ]
+    },
+    {
+      "source": "/static/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/home",
+      "destination": "/",
+      "permanent": true
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    }
+  ]
+}

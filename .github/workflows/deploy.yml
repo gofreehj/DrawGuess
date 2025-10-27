@@ -1,0 +1,132 @@
+name: Deploy to Vercel
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'DrawGuess/package-lock.json'
+          
+      - name: Install dependencies
+        working-directory: ./DrawGuess
+        run: npm ci
+        
+      - name: Run type check
+        working-directory: ./DrawGuess
+        run: npm run type-check
+        
+      - name: Run linting
+        working-directory: ./DrawGuess
+        run: npm run lint:check
+        
+      - name: Run security audit
+        working-directory: ./DrawGuess
+        run: npm run security-check
+        
+      - name: Build application
+        working-directory: ./DrawGuess
+        run: npm run build
+        env:
+          AI_PROVIDER: openai
+          OPENAI_API_KEY: dummy-key-for-build
+          AI_MODEL: gpt-4-vision-preview
+          NEXTAUTH_SECRET: dummy-secret-for-build
+          NEXTAUTH_URL: http://localhost:3000
+
+  deploy-preview:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'DrawGuess/package-lock.json'
+          
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+        
+      - name: Pull Vercel Environment Information
+        working-directory: ./DrawGuess
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+        
+      - name: Build Project Artifacts
+        working-directory: ./DrawGuess
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        
+      - name: Deploy Project Artifacts to Vercel
+        working-directory: ./DrawGuess
+        run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
+
+  deploy-production:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'DrawGuess/package-lock.json'
+          
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+        
+      - name: Pull Vercel Environment Information
+        working-directory: ./DrawGuess
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        
+      - name: Build Project Artifacts
+        working-directory: ./DrawGuess
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        
+      - name: Deploy Project Artifacts to Vercel
+        working-directory: ./DrawGuess
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+        
+      - name: Comment deployment URL
+        if: github.event_name == 'push'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const sha = context.sha;
+            
+            // Get the deployment URL (this would need to be captured from the deploy step)
+            const deploymentUrl = 'https://drawguess.vercel.app'; // This should be dynamic
+            
+            github.rest.repos.createCommitComment({
+              owner,
+              repo,
+              commit_sha: sha,
+              body: `🚀 Deployed to production: ${deploymentUrl}`
+            });

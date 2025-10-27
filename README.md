@@ -2,6 +2,16 @@
 
 一个基于 Next.js 的交互式绘画猜测游戏，用户根据提示词绘画，AI 来猜测画的内容。
 
+## 🚀 一键部署
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyour-username%2Fdrawguess&env=AI_PROVIDER,OPENAI_API_KEY,AI_MODEL,NEXTAUTH_SECRET&envDescription=AI%20service%20configuration%20and%20authentication%20secrets&envLink=https%3A%2F%2Fgithub.com%2Fyour-username%2Fdrawguess%23environment-variables&project-name=drawguess&repository-name=drawguess)
+
+点击上方按钮即可一键部署到 Vercel！
+
+📖 **部署指南**：
+- [🚀 快速部署指南](./QUICK_DEPLOY.md) - 3分钟快速上手
+- [📋 完整部署文档](./DEPLOYMENT.md) - 详细配置说明
+
 ## 功能特性
 
 - 🎨 HTML5 Canvas 绘画界面
@@ -99,16 +109,97 @@ npm start
 
 ## 部署
 
-### Vercel 部署
+### 🚀 一键部署到 Vercel（推荐）
 
-1. 推送代码到 GitHub
-2. 在 Vercel 中导入项目
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyour-username%2Fdrawguess&env=AI_PROVIDER,OPENAI_API_KEY,AI_MODEL,NEXTAUTH_SECRET&envDescription=AI%20service%20configuration%20and%20authentication%20secrets&envLink=https%3A%2F%2Fgithub.com%2Fyour-username%2Fdrawguess%23environment-variables&project-name=drawguess&repository-name=drawguess)
+
+#### 部署步骤：
+
+1. **点击部署按钮** - 点击上方的 "Deploy with Vercel" 按钮
+2. **连接 GitHub** - 如果还未连接，需要授权 Vercel 访问你的 GitHub 账户
+3. **配置项目** - Vercel 会自动检测这是一个 Next.js 项目
+4. **设置环境变量** - 在部署过程中配置以下必需的环境变量：
+
+#### 必需的环境变量
+
+| 变量名 | 描述 | 示例值 |
+|--------|------|--------|
+| `AI_PROVIDER` | AI 服务提供商 | `openai` 或 `gemini` |
+| `OPENAI_API_KEY` | OpenAI API 密钥 | `sk-...` |
+| `AI_MODEL` | 使用的 AI 模型 | `gpt-4-vision-preview` |
+| `NEXTAUTH_SECRET` | NextAuth 密钥 | 随机生成的字符串 |
+| `NEXTAUTH_URL` | 应用 URL | `https://your-app.vercel.app` |
+
+#### 可选的环境变量
+
+| 变量名 | 描述 | 默认值 |
+|--------|------|--------|
+| `GEMINI_API_KEY` | Gemini API 密钥（如果使用 Gemini） | - |
+| `NEXT_PUBLIC_APP_NAME` | 应用名称 | `DrawGuess` |
+| `NEXT_PUBLIC_MAX_DRAWING_SIZE` | 最大绘画尺寸 | `1024` |
+| `RATE_LIMIT_MAX_REQUESTS` | 速率限制请求数 | `100` |
+| `RATE_LIMIT_WINDOW_MS` | 速率限制时间窗口 | `900000` |
+
+5. **完成部署** - 点击 "Deploy" 按钮，等待部署完成
+6. **访问应用** - 部署完成后，你将获得一个 `.vercel.app` 域名来访问你的应用
+
+### 手动部署到 Vercel
+
+如果你想要更多控制，也可以手动部署：
+
+```bash
+# 安装 Vercel CLI
+npm i -g vercel
+
+# 登录 Vercel
+vercel login
+
+# 部署
+vercel
+
+# 设置环境变量
+vercel env add AI_PROVIDER
+vercel env add OPENAI_API_KEY
+vercel env add AI_MODEL
+vercel env add NEXTAUTH_SECRET
+
+# 重新部署以应用环境变量
+vercel --prod
+```
+
+### 其他平台部署
+
+项目也支持部署到其他平台：
+
+#### Netlify
+1. 连接 GitHub 仓库
+2. 设置构建命令：`npm run build`
+3. 设置发布目录：`.next`
+4. 配置环境变量
+
+#### Railway
+1. 连接 GitHub 仓库
+2. Railway 会自动检测 Next.js 项目
 3. 配置环境变量
 4. 部署
 
-### 其他平台
+#### 自托管
+```bash
+# 构建项目
+npm run build
 
-项目支持任何支持 Node.js 的平台部署。
+# 启动生产服务器
+npm start
+```
+
+### 部署后配置
+
+部署完成后，建议进行以下配置：
+
+1. **自定义域名** - 在 Vercel 控制台中添加自定义域名
+2. **环境变量验证** - 访问 `/api/health` 检查配置是否正确
+3. **性能监控** - 启用 Vercel Analytics 和 Speed Insights
+4. **错误追踪** - 配置 Sentry 进行错误监控
 
 ## 开发状态
 

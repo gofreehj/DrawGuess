@@ -31,7 +31,13 @@
     "docker:build": "docker build -t drawing-game .",
     "docker:run": "docker run -p 3000:3000 --env-file .env.production drawing-game",
     "docker:compose": "docker-compose up -d",
-    "docker:compose:build": "docker-compose up --build -d"
+    "docker:compose:build": "docker-compose up --build -d",
+    "vercel:deploy": "vercel",
+    "vercel:deploy:prod": "vercel --prod",
+    "vercel:env": "vercel env ls",
+    "vercel:logs": "vercel logs",
+    "deploy:vercel": "npm run deploy:check && vercel --prod",
+    "deploy:preview": "npm run deploy:check && vercel"
   },
   "dependencies": {
     "@types/better-sqlite3": "^7.6.13",

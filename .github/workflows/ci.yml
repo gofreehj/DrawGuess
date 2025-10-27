@@ -1,0 +1,103 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18, 20]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: 'DrawGuess/package-lock.json'
+          
+      - name: Install dependencies
+        working-directory: ./DrawGuess
+        run: npm ci
+        
+      - name: Run ESLint
+        working-directory: ./DrawGuess
+        run: npm run lint:check
+        
+      - name: Run TypeScript type check
+        working-directory: ./DrawGuess
+        run: npm run type-check
+        
+      - name: Run security audit
+        working-directory: ./DrawGuess
+        run: npm run security-check
+        
+      - name: Build application
+        working-directory: ./DrawGuess
+        run: npm run build
+        env:
+          AI_PROVIDER: openai
+          OPENAI_API_KEY: dummy-key-for-build
+          AI_MODEL: gpt-4-vision-preview
+          NEXTAUTH_SECRET: dummy-secret-for-build
+          NEXTAUTH_URL: http://localhost:3000
+          
+      - name: Check build size
+        working-directory: ./DrawGuess
+        run: |
+          echo "Build size analysis:"
+          du -sh .next/
+          find .next/static -name "*.js" -exec ls -lh {} \; | head -10
+
+  dependency-review:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          base-ref: ${{ github.event.pull_request.base.sha || 'main' }}
+          head-ref: ${{ github.event.pull_request.head.sha || github.ref }}
+
+  code-quality:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'DrawGuess/package-lock.json'
+          
+      - name: Install dependencies
+        working-directory: ./DrawGuess
+        run: npm ci
+        
+      - name: Run code quality checks
+        working-directory: ./DrawGuess
+        run: |
+          echo "Checking for TODO/FIXME comments:"
+          grep -r "TODO\|FIXME" src/ || echo "No TODO/FIXME found"
+          
+          echo "Checking for console.log statements:"
+          grep -r "console\.log" src/ || echo "No console.log found"
+          
+          echo "Checking for unused dependencies:"
+          npx depcheck --ignores="@types/*,eslint-*" || echo "Dependency check completed"
