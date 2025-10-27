@@ -2,15 +2,41 @@
 
 一个基于 Next.js 的交互式绘画猜测游戏，用户根据提示词绘画，AI 来猜测画的内容。
 
-## 🚀 一键部署
+## 🚀 快速部署
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyour-username%2Fdrawguess&env=AI_PROVIDER,OPENAI_API_KEY,AI_MODEL,NEXTAUTH_SECRET&envDescription=AI%20service%20configuration%20and%20authentication%20secrets&envLink=https%3A%2F%2Fgithub.com%2Fyour-username%2Fdrawguess%23environment-variables&project-name=drawguess&repository-name=drawguess)
+### 🎯 选择适合你的部署方式
 
-点击上方按钮即可一键部署到 Vercel！
+#### 🆕 新用户 - 一键部署
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyour-username%2Fdrawguess&env=AI_PROVIDER,OPENAI_API_KEY,AI_MODEL,NEXTAUTH_SECRET&envDescription=AI%20service%20configuration%20and%20authentication%20secrets&project-name=drawguess&repository-name=drawguess)
 
-📖 **部署指南**：
+**适用场景**：第一次使用，想要快速体验
+- ✅ 自动创建 GitHub 仓库副本
+- ✅ 自动配置项目设置
+- ✅ 引导式环境变量配置
+
+#### 👨‍💻 开发者 - 导入现有仓库
+**适用场景**：已有仓库，想要部署现有代码
+
+1. 访问 [Vercel Dashboard](https://vercel.com/new)
+2. 点击 "Import Git Repository"
+3. 选择你的 DrawGuess 仓库
+4. 设置 Root Directory 为 `DrawGuess`
+5. 配置环境变量并部署
+
+#### ⚡ 极客 - 命令行部署
+**适用场景**：喜欢命令行，需要完全控制
+
+```bash
+cd DrawGuess
+npm install -g vercel
+vercel login
+vercel --prod
+```
+
+📖 **详细指南**：
 - [🚀 快速部署指南](./QUICK_DEPLOY.md) - 3分钟快速上手
-- [📋 完整部署文档](./DEPLOYMENT.md) - 详细配置说明
+- [⚙️ Vercel 配置指南](./VERCEL_SETUP.md) - 部署方式对比和详细配置
+- [📋 完整部署文档](./DEPLOYMENT.md) - 多平台部署说明
 
 ## 功能特性
 
@@ -109,16 +135,23 @@ npm start
 
 ## 部署
 
-### 🚀 一键部署到 Vercel（推荐）
+### 🚀 部署到 Vercel（推荐）
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyour-username%2Fdrawguess&env=AI_PROVIDER,OPENAI_API_KEY,AI_MODEL,NEXTAUTH_SECRET&envDescription=AI%20service%20configuration%20and%20authentication%20secrets&envLink=https%3A%2F%2Fgithub.com%2Fyour-username%2Fdrawguess%23environment-variables&project-name=drawguess&repository-name=drawguess)
+#### 方式一：直接导入现有仓库（推荐）
 
-#### 部署步骤：
+1. **访问 Vercel** - 前往 [vercel.com/new](https://vercel.com/new)
+2. **导入仓库** - 点击 "Import Git Repository"
+3. **选择仓库** - 找到并选择你的 DrawGuess 仓库
+4. **配置根目录** - 设置 Root Directory 为 `DrawGuess`
+5. **自动检测** - Vercel 会自动检测这是一个 Next.js 项目
+6. **配置环境变量** - 添加必需的环境变量（见下表）
+7. **部署** - 点击 "Deploy" 开始部署
 
-1. **点击部署按钮** - 点击上方的 "Deploy with Vercel" 按钮
-2. **连接 GitHub** - 如果还未连接，需要授权 Vercel 访问你的 GitHub 账户
-3. **配置项目** - Vercel 会自动检测这是一个 Next.js 项目
-4. **设置环境变量** - 在部署过程中配置以下必需的环境变量：
+#### 方式二：一键部署模板
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyour-username%2Fdrawguess&env=AI_PROVIDER,OPENAI_API_KEY,AI_MODEL,NEXTAUTH_SECRET&envDescription=AI%20service%20configuration%20and%20authentication%20secrets&project-name=drawguess&repository-name=drawguess)
+
+> ⚠️ 注意：此方式会创建仓库副本，如果你已有仓库，推荐使用方式一
 
 #### 必需的环境变量
 
