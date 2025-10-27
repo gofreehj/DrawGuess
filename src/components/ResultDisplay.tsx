@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { AICallLog } from '@/types/game';
+import SmartImage from './SmartImage';
 
 interface GameResult {
   originalPrompt: string;
@@ -12,6 +13,8 @@ interface GameResult {
   duration?: number;
   drawing?: string;
   aiCallLog?: AICallLog;
+  sessionId?: string; // Add sessionId for SmartImage
+  userId?: string; // Add userId for SmartImage
 }
 
 interface ResultDisplayProps {
@@ -105,11 +108,15 @@ export default function ResultDisplay({ result, isVisible, onNewGame }: ResultDi
             <div className="text-sm text-gray-600 font-medium mb-3 text-center">Your Drawing:</div>
             <div className="flex justify-center">
               <div className="bg-white rounded-lg border-2 border-gray-200 p-2 shadow-sm">
-                <img 
-                  src={result.drawing} 
-                  alt="User's drawing" 
-                  className="max-w-xs max-h-64 object-contain rounded"
-                  style={{ imageRendering: 'pixelated' }}
+                <SmartImage
+                  gameId={result.sessionId || 'unknown'}
+                  fallbackUrl={result.drawing}
+                  userId={result.userId}
+                  alt="User's drawing"
+                  className="max-w-xs max-h-64"
+                  showLoadingState={true}
+                  showErrorState={true}
+                  retryable={true}
                 />
               </div>
             </div>

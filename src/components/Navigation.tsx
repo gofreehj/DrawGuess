@@ -3,10 +3,13 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import SyncStatusIndicator from './SyncStatusIndicator';
 
 export default function Navigation() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user, isAuthenticated, signOut, loading, isSupabaseEnabled } = useAuth();
 
   const navItems = [
     { href: '/', label: '游戏', icon: '🎮' },
@@ -55,6 +58,55 @@ export default function Navigation() {
                 <span>{item.label}</span>
               </Link>
             ))}
+            
+            {/* Auth Section */}
+            {isSupabaseEnabled && (
+              <div className="flex items-center space-x-4 ml-4 pl-4 border-l border-gray-200">
+                {loading ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                ) : isAuthenticated && user ? (
+                  <div className="flex items-center space-x-3">
+                    {/* Sync Status Indicator */}
+                    <SyncStatusIndicator showDetails={false} />
+                    
+                    <Link
+                      href="/profile"
+                      className="flex items-center space-x-2 px-2 py-1 rounded hover:bg-gray-100 transition-colors duration-200"
+                    >
+                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <span className="text-sm font-medium text-blue-700">
+                          {(user.user_metadata?.display_name || user.email || 'U').charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <span className="text-sm text-gray-700 max-w-24 truncate">
+                        {user.user_metadata?.display_name || user.email?.split('@')[0]}
+                      </span>
+                    </Link>
+                    <button
+                      onClick={() => signOut()}
+                      className="text-sm text-gray-600 hover:text-gray-900 px-2 py-1 rounded hover:bg-gray-100 transition-colors duration-200"
+                    >
+                      登出
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-2">
+                    <Link
+                      href="/auth/signin"
+                      className="text-sm text-gray-600 hover:text-gray-900 px-3 py-1 rounded hover:bg-gray-100 transition-colors duration-200"
+                    >
+                      登录
+                    </Link>
+                    <Link
+                      href="/auth/signup"
+                      className="text-sm bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors duration-200"
+                    >
+                      注册
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -98,6 +150,68 @@ export default function Navigation() {
                 <span>{item.label}</span>
               </Link>
             ))}
+            
+            {/* Mobile Auth Section */}
+            {isSupabaseEnabled && (
+              <div className="border-t border-gray-200 pt-3 mt-3">
+                {loading ? (
+                  <div className="flex items-center justify-center py-2">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                  </div>
+                ) : isAuthenticated && user ? (
+                  <div className="space-y-2">
+                    <Link
+                      href="/profile"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="flex items-center space-x-3 px-3 py-2 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors duration-200"
+                    >
+                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <span className="text-sm font-medium text-blue-700">
+                          {(user.user_metadata?.display_name || user.email || 'U').charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {user.user_metadata?.display_name || '用户'}
+                        </div>
+                        <div className="text-xs text-gray-500 truncate max-w-32">
+                          {user.email}
+                        </div>
+                      </div>
+                    </Link>
+                    <button
+                      onClick={() => {
+                        signOut();
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="w-full text-left px-3 py-2 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors duration-200"
+                    >
+                      <span className="text-xl mr-3">🚪</span>
+                      登出
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Link
+                      href="/auth/signin"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="flex items-center space-x-3 px-3 py-2 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors duration-200"
+                    >
+                      <span className="text-xl">🔑</span>
+                      <span>登录</span>
+                    </Link>
+                    <Link
+                      href="/auth/signup"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="flex items-center space-x-3 px-3 py-2 text-base font-medium bg-blue-600 text-white hover:bg-blue-700 rounded-md transition-colors duration-200"
+                    >
+                      <span className="text-xl">✨</span>
+                      <span>注册</span>
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -1,7 +1,8 @@
 import { NextRequest } from 'next/server';
-import { getRandomPrompt, createGameSession } from '@/lib/database';
+import { getRandomPrompt } from '@/lib/database';
 import { initializeDatabaseWithSeedData } from '@/lib/init-database';
 import { createErrorResponse, ERROR_CODES, handleError, createErrorResponseFromAPIError } from '@/lib/error-handler';
+import { getDataManager } from '@/lib/data-adapters';
 
 // API route for starting a new game
 export async function POST(request: NextRequest) {
@@ -21,9 +22,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create a new game session
-    const gameSession = createGameSession({
-      userId: undefined, // Anonymous user for now
+    // Initialize data manager if not already done
+    const dataManager = getDataManager();
+    if (!dataManager.isInitialized()) {
+      await dataManager.initialize();
+    }
+
+    // Create a new game session using the data adapter
+    const gameSession = await dataManager.createGameSession({
+      userId: 'anonymous', // Use default anonymous user
       prompt: prompt.text,
       promptCategory: prompt.category,
       drawing: '', // Will be filled when user submits drawing

@@ -1,7 +1,10 @@
 import { NextRequest } from 'next/server';
-import { getGameSessionById, updateGameSession } from '@/lib/database';
 import { aiService } from '@/lib/ai-service';
 import { createErrorResponse, handleError, ERROR_CODES, createErrorResponseFromAPIError } from '@/lib/error-handler';
+import { getDataManager } from '@/lib/data-adapters';
+import { uploadImageToSupabase } from '@/lib/image-upload';
+import { isSupabaseEnabled } from '@/lib/supabase-config';
+import { syncService } from '@/lib/sync-service';
 
 interface SubmitGameRequest {
   sessionId: string;
@@ -23,8 +26,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get the game session from database
-    const gameSession = getGameSessionById(body.sessionId);
+    // Initialize data manager if not already done
+    const dataManager = getDataManager();
+    if (!dataManager.isInitialized()) {
+      await dataManager.initialize();
+    }
+
+    // Get the game session from data adapter
+    const gameSession = await dataManager.getGameSession(body.sessionId);
     
     if (!gameSession) {
       return createErrorResponse(
@@ -43,6 +52,33 @@ export async function POST(request: NextRequest) {
         'Cannot submit drawing for an already completed session',
         409
       );
+    }
+
+    // Upload image to Supabase Storage if available
+    let imageUrl = body.imageData; // Default to base64 data
+    let uploadSuccess = false;
+    
+    // Skip Supabase upload on server side - it will be handled on client side
+    if (isSupabaseEnabled() && typeof window !== 'undefined') {
+      try {
+        const uploadResult = await uploadImageToSupabase(body.sessionId, body.imageData, {
+          quality: 0.8,
+          maxWidth: 800,
+          maxHeight: 600
+        });
+        
+        if (uploadResult.success && uploadResult.url) {
+          imageUrl = uploadResult.url;
+          uploadSuccess = true;
+          console.log('Image uploaded to Supabase:', uploadResult.path);
+        } else {
+          console.warn('Image upload failed, using base64:', uploadResult.error);
+        }
+      } catch (uploadError) {
+        console.warn('Image upload error, using base64:', uploadError);
+      }
+    } else if (typeof window === 'undefined') {
+      console.log('Skipping Supabase upload on server side - will use base64 data');
     }
 
     // Call AI service to recognize the drawing with enhanced fallback support
@@ -79,15 +115,23 @@ export async function POST(request: NextRequest) {
     const endTime = new Date();
     const duration = Math.round((endTime.getTime() - gameSession.startTime.getTime()) / 1000);
     
-    // Update the game session with results
-    updateGameSession(body.sessionId, {
-      drawing: body.imageData,
+    // Update the game session with results using data adapter
+    await dataManager.updateGameSession(body.sessionId, {
+      drawing: imageUrl, // Use Supabase URL if uploaded, otherwise base64
       aiGuess: guess,
       confidence: confidence,
       isCorrect: isCorrect,
       endTime: endTime,
       duration: duration
     });
+
+    // Add to sync queue for cross-device synchronization
+    try {
+      syncService.addPendingOperation(body.sessionId, 'update');
+    } catch (syncError) {
+      console.warn('Failed to add to sync queue:', syncError);
+      // Don't fail the request if sync fails
+    }
 
     // 调试日志
     console.log('🔍 API Route - AI Response:', {
@@ -110,6 +154,11 @@ export async function POST(request: NextRequest) {
         fallbackUsed: aiResponse.fallbackUsed || false,
         retryCount: aiResponse.retryCount || 0,
         primaryServiceAvailable: !aiResponse.fallbackUsed
+      },
+      imageUpload: {
+        success: uploadSuccess,
+        url: uploadSuccess ? imageUrl : undefined,
+        fallbackToBase64: !uploadSuccess
       },
       timestamp: new Date()
     });

@@ -8,6 +8,7 @@ import GameHistory from './GameHistory';
 import StatusIndicator, { NetworkStatus } from './StatusIndicator';
 import LoadingSpinner, { PulsingDots } from './LoadingSpinner';
 import ProgressIndicator from './ProgressIndicator';
+import ImageUploadProgress from './ImageUploadProgress';
 import { ToastContainer, useToast } from './Toast';
 import { GameResult } from '@/types/game';
 
@@ -68,6 +69,8 @@ export default function GameBoard() {
   const [error, setError] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [aiProcessingStage, setAIProcessingStage] = useState<'uploading' | 'analyzing' | 'processing' | 'complete'>('uploading');
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   
   // Use custom hooks
   const isMobile = useIsMobile();
@@ -133,12 +136,24 @@ export default function GameBoard() {
 
     setGameState('submitting');
     setError(null);
+    setUploadError(null);
+    setUploadProgress(0);
     setAIProcessingStage('uploading');
 
     try {
       // Stage 1: Uploading
       setAIProcessingStage('uploading');
-      await new Promise(resolve => setTimeout(resolve, 500)); // Brief delay for UX
+      setUploadProgress(10);
+      
+      // Simulate upload progress for better UX
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev < 80) {
+            return prev + Math.random() * 10;
+          }
+          return prev;
+        });
+      }, 200);
 
       const response = await fetch('/api/game/submit', {
         method: 'POST',
@@ -150,6 +165,9 @@ export default function GameBoard() {
           imageData: currentDrawing,
         }),
       });
+
+      clearInterval(progressInterval);
+      setUploadProgress(100);
 
       // Stage 2: Analyzing
       setAIProcessingStage('analyzing');
@@ -183,21 +201,31 @@ export default function GameBoard() {
         duration: data.duration,
         drawing: currentDrawing, // 添加用户绘画数据
         aiCallLog: data.aiCallLog,
+        sessionId: currentSession.sessionId, // Add sessionId for SmartImage
+        userId: undefined, // Will be determined by auth context
       });
 
       setGameState('completed');
       
-      // Show result toast
+      // Show result toast with upload status
       if (data.isCorrect) {
         toast.success('Correct guess!', `AI correctly identified your ${data.originalPrompt}`);
       } else {
         toast.info('Good try!', `AI guessed "${data.aiGuess}" but you drew "${data.originalPrompt}"`);
+      }
+      
+      // Show upload status if available
+      if (data.imageUpload?.success) {
+        console.log('Image uploaded to cloud storage successfully');
+      } else if (data.imageUpload?.fallbackToBase64) {
+        console.log('Image stored locally (cloud upload unavailable)');
       }
 
     } catch (err) {
       console.error('Error submitting drawing:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to submit drawing';
       setError(errorMessage);
+      setUploadError(errorMessage);
       setGameState('drawing'); // Return to drawing state on error
       
       // Show error toast
@@ -206,6 +234,7 @@ export default function GameBoard() {
           label: 'Try Again',
           onClick: () => {
             setError(null);
+            setUploadError(null);
             submitDrawing();
           }
         }
@@ -410,6 +439,22 @@ export default function GameBoard() {
                 currentStep={['uploading', 'analyzing', 'processing', 'complete'].indexOf(aiProcessingStage)}
                 className="mb-4"
               />
+              
+              {/* Image Upload Progress */}
+              {aiProcessingStage === 'uploading' && (
+                <div className="mb-4">
+                  <ImageUploadProgress
+                    progress={uploadProgress}
+                    uploading={true}
+                    error={uploadError}
+                    onRetry={() => {
+                      setUploadError(null);
+                      setUploadProgress(0);
+                      // Retry logic would be handled by the parent
+                    }}
+                  />
+                </div>
+              )}
               
               <p className="text-gray-600 text-center text-sm">
                 This may take a few moments. Please wait.

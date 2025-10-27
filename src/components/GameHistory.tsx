@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import SmartImage from './SmartImage';
+import ImageLightbox, { useImageLightbox } from './ImageLightbox';
 
 interface GameHistoryProps {
   isVisible: boolean;
@@ -27,12 +29,21 @@ interface HistoryResponse {
   successRate: number;
   averageConfidence: number;
   successfulGuesses: number;
+  pagination?: {
+    limit: number;
+    offset: number;
+    totalCount: number;
+    hasMore: boolean;
+    sortBy: string;
+    sortOrder: string;
+  };
 }
 
 export default function GameHistory({ isVisible, onClose }: GameHistoryProps) {
   const [history, setHistory] = useState<HistoryResponse | null>(null);
   const [selectedGame, setSelectedGame] = useState<GameSessionResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedGames, setSelectedGames] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
@@ -41,20 +52,42 @@ export default function GameHistory({ isVisible, onClose }: GameHistoryProps) {
     gameId?: string;
     count?: number;
   } | null>(null);
+  
+  // Pagination and filtering state
+  const [sortBy, setSortBy] = useState<'date' | 'score' | 'duration'>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [filterCategory, setFilterCategory] = useState<string>('');
+  const [filterResult, setFilterResult] = useState<'all' | 'correct' | 'incorrect'>('all');
+  
+  // Image lightbox state
+  const { isOpen: lightboxOpen, imageUrl: lightboxImageUrl, alt: lightboxAlt, openLightbox, closeLightbox } = useImageLightbox();
 
-  // Fetch game history when component becomes visible
+  // Fetch game history when component becomes visible or filters change
   useEffect(() => {
-    if (isVisible && !history) {
-      fetchHistory();
+    if (isVisible) {
+      fetchHistory(true); // Reset to first page when filters change
     }
-  }, [isVisible, history]);
+  }, [isVisible, sortBy, sortOrder, filterCategory, filterResult]);
 
-  const fetchHistory = async () => {
-    setIsLoading(true);
+  const fetchHistory = async (reset = false) => {
+    if (reset) {
+      setIsLoading(true);
+      setHistory(null);
+    } else {
+      setIsLoadingMore(true);
+    }
     setError(null);
 
     try {
-      const response = await fetch('/api/history?limit=50');
+      const offset = reset ? 0 : (history?.games.length || 0);
+      const params = new URLSearchParams({
+        limit: '20',
+        offset: offset.toString(),
+        sortBy,
+        sortOrder
+      });
+
+      const response = await fetch(`/api/history?${params}`);
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -62,12 +95,28 @@ export default function GameHistory({ isVisible, onClose }: GameHistoryProps) {
       }
 
       const data: HistoryResponse = await response.json();
-      setHistory(data);
+      
+      if (reset) {
+        setHistory(data);
+      } else {
+        // Append new games to existing history
+        setHistory(prev => prev ? {
+          ...data,
+          games: [...prev.games, ...data.games]
+        } : data);
+      }
     } catch (err) {
       console.error('Error fetching history:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch history');
     } finally {
       setIsLoading(false);
+      setIsLoadingMore(false);
+    }
+  };
+
+  const loadMoreGames = () => {
+    if (!isLoadingMore && history?.pagination?.hasMore) {
+      fetchHistory(false);
     }
   };
 
@@ -104,6 +153,27 @@ export default function GameHistory({ isVisible, onClose }: GameHistoryProps) {
     const remainingSeconds = seconds % 60;
     return minutes > 0 ? `${minutes}m ${remainingSeconds}s` : `${remainingSeconds}s`;
   };
+
+  // Filter games based on current filters
+  const filteredGames = history?.games.filter(game => {
+    // Category filter
+    if (filterCategory && game.promptCategory !== filterCategory) {
+      return false;
+    }
+    
+    // Result filter
+    if (filterResult === 'correct' && !game.isCorrect) {
+      return false;
+    }
+    if (filterResult === 'incorrect' && game.isCorrect) {
+      return false;
+    }
+    
+    return true;
+  }) || [];
+
+  // Get unique categories for filter dropdown
+  const categories = Array.from(new Set(history?.games.map(game => game.promptCategory) || [])).sort();
 
   // Toggle game selection for batch operations
   const toggleGameSelection = (gameId: string) => {
@@ -302,6 +372,69 @@ export default function GameHistory({ isVisible, onClose }: GameHistoryProps) {
           {/* Game List */}
           <div className="w-1/2 border-r border-gray-200 overflow-y-auto">
             <div className="p-4">
+              {/* Filters and Sorting */}
+              <div className="mb-4 space-y-3">
+                <div className="flex flex-wrap items-center gap-3">
+                  {/* Sort Controls */}
+                  <div className="flex items-center space-x-2">
+                    <label className="text-sm font-medium text-gray-700">排序:</label>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as 'date' | 'score' | 'duration')}
+                      className="text-sm border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="date">日期</option>
+                      <option value="score">置信度</option>
+                      <option value="duration">用时</option>
+                    </select>
+                    <button
+                      onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                      className="text-sm px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 focus:ring-2 focus:ring-blue-500"
+                      title={sortOrder === 'asc' ? '升序' : '降序'}
+                    >
+                      {sortOrder === 'asc' ? '↑' : '↓'}
+                    </button>
+                  </div>
+
+                  {/* Category Filter */}
+                  <div className="flex items-center space-x-2">
+                    <label className="text-sm font-medium text-gray-700">分类:</label>
+                    <select
+                      value={filterCategory}
+                      onChange={(e) => setFilterCategory(e.target.value)}
+                      className="text-sm border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">全部</option>
+                      {categories.map(category => (
+                        <option key={category} value={category}>{category}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Result Filter */}
+                  <div className="flex items-center space-x-2">
+                    <label className="text-sm font-medium text-gray-700">结果:</label>
+                    <select
+                      value={filterResult}
+                      onChange={(e) => setFilterResult(e.target.value as 'all' | 'correct' | 'incorrect')}
+                      className="text-sm border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="all">全部</option>
+                      <option value="correct">正确</option>
+                      <option value="incorrect">错误</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Results count */}
+                <div className="text-sm text-gray-600">
+                  显示 {filteredGames.length} 条记录
+                  {history?.pagination && (
+                    <span> (共 {history.pagination.totalCount} 条)</span>
+                  )}
+                </div>
+              </div>
+
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-semibold text-gray-800">游戏记录</h3>
                 
@@ -380,7 +513,7 @@ export default function GameHistory({ isVisible, onClose }: GameHistoryProps) {
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
                   <p className="text-red-800">错误: {error}</p>
                   <button
-                    onClick={fetchHistory}
+                    onClick={() => fetchHistory(true)}
                     className="mt-2 text-red-600 hover:text-red-800 underline"
                   >
                     重试
@@ -388,14 +521,14 @@ export default function GameHistory({ isVisible, onClose }: GameHistoryProps) {
                 </div>
               )}
 
-              {history && history.games.length === 0 && (
+              {history && filteredGames.length === 0 && (
                 <div className="text-center py-8 text-gray-500">
-                  <p>还没有游戏记录</p>
-                  <p className="text-sm mt-1">开始你的第一个游戏吧！</p>
+                  <p>没有找到匹配的游戏记录</p>
+                  <p className="text-sm mt-1">尝试调整筛选条件</p>
                 </div>
               )}
 
-              {history && history.games.map((game) => (
+              {filteredGames.map((game) => (
                 <div
                   key={game.id}
                   className={`border rounded-lg p-4 mb-3 transition-colors ${
@@ -466,6 +599,26 @@ export default function GameHistory({ isVisible, onClose }: GameHistoryProps) {
                   </div>
                 </div>
               ))}
+
+              {/* Load More Button */}
+              {history?.pagination?.hasMore && (
+                <div className="text-center py-4">
+                  <button
+                    onClick={loadMoreGames}
+                    disabled={isLoadingMore}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center mx-auto"
+                  >
+                    {isLoadingMore ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        加载中...
+                      </>
+                    ) : (
+                      '加载更多'
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -524,14 +677,24 @@ export default function GameHistory({ isVisible, onClose }: GameHistoryProps) {
                     <div className="bg-gray-50 rounded-lg p-4">
                       <h4 className="font-semibold text-gray-800 mb-3">你的绘画</h4>
                       <div className="flex justify-center">
-                        <div className="bg-white rounded-lg border-2 border-gray-200 p-2 shadow-sm">
-                          <img
-                            src={selectedGame.drawing}
+                        <div 
+                          className="bg-white rounded-lg border-2 border-gray-200 p-2 shadow-sm cursor-zoom-in hover:shadow-lg transition-shadow"
+                          onClick={() => openLightbox(selectedGame.drawing, `Drawing of ${selectedGame.prompt}`)}
+                        >
+                          <SmartImage
+                            gameId={selectedGame.id}
+                            fallbackUrl={selectedGame.drawing}
+                            userId={selectedGame.userId}
                             alt={`Drawing of ${selectedGame.prompt}`}
-                            className="max-w-full max-h-64 object-contain rounded"
-                            style={{ imageRendering: 'pixelated' }}
+                            className="max-w-full max-h-64"
+                            showLoadingState={true}
+                            showErrorState={true}
+                            retryable={true}
                           />
                         </div>
+                      </div>
+                      <div className="text-center mt-2">
+                        <span className="text-xs text-gray-500">Click to view full size</span>
                       </div>
                     </div>
                   )}
@@ -623,6 +786,14 @@ export default function GameHistory({ isVisible, onClose }: GameHistoryProps) {
           </div>
         </div>
       )}
+
+      {/* Image Lightbox */}
+      <ImageLightbox
+        isOpen={lightboxOpen}
+        imageUrl={lightboxImageUrl}
+        alt={lightboxAlt}
+        onClose={closeLightbox}
+      />
     </div>
   );
 }

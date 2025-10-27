@@ -235,7 +235,7 @@ class AIService {
 
       // Create AbortController for timeout handling
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
 
       let response: Response;
 
@@ -269,6 +269,10 @@ class AIService {
         });
       } else {
         // Make API call to OpenAI
+        console.log(`Making AI request to: ${this.config.apiUrl}/chat/completions`);
+        console.log(`Using model: ${this.config.model}`);
+        console.log(`API Key length: ${this.config.apiKey.length} chars`);
+        
         response = await fetch(`${this.config.apiUrl}/chat/completions`, {
           method: 'POST',
           headers: {
@@ -545,7 +549,7 @@ class AIService {
   /**
    * Main recognition method with enhanced fallback support and retry logic
    */
-  async recognizeWithFallback(imageData: string, originalPrompt: string, maxRetries: number = 2): Promise<AIServiceResponse> {
+  async recognizeWithFallback(imageData: string, originalPrompt: string, maxRetries: number = 1): Promise<AIServiceResponse> {
     let lastError: string = '';
     let retryCount = 0;
 
@@ -564,7 +568,7 @@ class AIService {
         lastError = result.error || 'Unknown error';
         retryCount = attempt;
 
-        // Don't retry for certain error types
+        // Don't retry for certain error types (save costs)
         if (this.shouldNotRetry(lastError)) {
           break;
         }

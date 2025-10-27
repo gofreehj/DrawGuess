@@ -1,5 +1,7 @@
 import { NextRequest } from 'next/server';
 import { getGameSessionById, deleteGameSession } from '@/lib/database';
+import { getDataManager } from '@/lib/data-adapters';
+import { createErrorResponse, ERROR_CODES, handleError, createErrorResponseFromAPIError } from '@/lib/error-handler';
 
 // API route for individual game history
 export async function GET(
@@ -11,29 +13,29 @@ export async function GET(
 
     // Validate gameId parameter
     if (!gameId || typeof gameId !== 'string') {
-      return Response.json(
-        {
-          error: {
-            code: 'INVALID_GAME_ID',
-            message: 'Game ID is required and must be a valid string'
-          }
-        },
-        { status: 400 }
+      return createErrorResponse(
+        'INVALID_GAME_ID',
+        'Game ID is required and must be a valid string',
+        { providedGameId: gameId },
+        400
       );
     }
 
-    // Get game session by ID
-    const game = getGameSessionById(gameId);
+    // Initialize data manager if not already done
+    const dataManager = getDataManager();
+    if (!dataManager.isInitialized()) {
+      await dataManager.initialize();
+    }
+
+    // Get game session by ID using data adapter
+    const game = await dataManager.getGameSession(gameId);
 
     if (!game) {
-      return Response.json(
-        {
-          error: {
-            code: 'GAME_NOT_FOUND',
-            message: `Game with ID ${gameId} not found`
-          }
-        },
-        { status: 404 }
+      return createErrorResponse(
+        'GAME_NOT_FOUND',
+        `Game with ID ${gameId} not found`,
+        { gameId },
+        404
       );
     }
 
@@ -55,19 +57,8 @@ export async function GET(
     return Response.json(response);
   } catch (error) {
     console.error('Error fetching game details:', error);
-    
-    return Response.json(
-      {
-        error: {
-          code: 'INTERNAL_ERROR',
-          message: 'Failed to fetch game details',
-          details: error instanceof Error ? error.message : 'Unknown error'
-        },
-        timestamp: new Date().toISOString(),
-        requestId: crypto.randomUUID()
-      },
-      { status: 500 }
-    );
+    const apiError = handleError(error, 'Game Details');
+    return createErrorResponseFromAPIError(apiError);
   }
 }
 
@@ -81,33 +72,37 @@ export async function DELETE(
 
     // Validate gameId parameter
     if (!gameId || typeof gameId !== 'string') {
-      return Response.json(
-        {
-          error: {
-            code: 'INVALID_GAME_ID',
-            message: 'Game ID is required and must be a valid string'
-          }
-        },
-        { status: 400 }
+      return createErrorResponse(
+        'INVALID_GAME_ID',
+        'Game ID is required and must be a valid string',
+        { providedGameId: gameId },
+        400
       );
+    }
+
+    // Initialize data manager if not already done
+    const dataManager = getDataManager();
+    if (!dataManager.isInitialized()) {
+      await dataManager.initialize();
     }
 
     // Check if game exists before deletion
-    const existingGame = getGameSessionById(gameId);
+    const existingGame = await dataManager.getGameSession(gameId);
     if (!existingGame) {
-      return Response.json(
-        {
-          error: {
-            code: 'GAME_NOT_FOUND',
-            message: `Game with ID ${gameId} not found`
-          }
-        },
-        { status: 404 }
+      return createErrorResponse(
+        'GAME_NOT_FOUND',
+        `Game with ID ${gameId} not found`,
+        { gameId },
+        404
       );
     }
 
-    // Delete the game session
-    deleteGameSession(gameId);
+    // Delete the game session using data adapter
+    const success = await dataManager.deleteGameSession(gameId);
+    
+    if (!success) {
+      throw new Error('Failed to delete game session');
+    }
 
     return Response.json({
       success: true,
@@ -116,18 +111,7 @@ export async function DELETE(
 
   } catch (error) {
     console.error('Error deleting game session:', error);
-    
-    return Response.json(
-      {
-        error: {
-          code: 'INTERNAL_ERROR',
-          message: 'Failed to delete game session',
-          details: error instanceof Error ? error.message : 'Unknown error'
-        },
-        timestamp: new Date().toISOString(),
-        requestId: crypto.randomUUID()
-      },
-      { status: 500 }
-    );
+    const apiError = handleError(error, 'Delete Game Session');
+    return createErrorResponseFromAPIError(apiError);
   }
 }

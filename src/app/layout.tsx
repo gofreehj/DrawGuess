@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "../styles/animations.css";
 import { initializeApp } from "../lib/startup";
+import Providers from "@/components/Providers";
 
 // 在服务器端初始化应用
 if (typeof window === 'undefined') {
@@ -36,7 +37,9 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="I Draw, You Guess!" />
       </head>
       <body className="antialiased font-sans touch-manipulation">
-        {children}
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );

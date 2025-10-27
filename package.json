@@ -1,5 +1,5 @@
 {
-  "name": "i_draw_you_guss",
+  "name": "drawguess",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -37,9 +37,13 @@
     "vercel:env": "vercel env ls",
     "vercel:logs": "vercel logs",
     "deploy:vercel": "npm run deploy:check && vercel --prod",
-    "deploy:preview": "npm run deploy:check && vercel"
+    "deploy:preview": "npm run deploy:check && vercel",
+    "supabase:setup": "bash scripts/setup-supabase.sh",
+    "supabase:check": "node scripts/check-supabase-config.js"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.7.0",
+    "@supabase/supabase-js": "^2.76.1",
     "@types/better-sqlite3": "^7.6.13",
     "better-sqlite3": "^12.4.1",
     "canvas": "^3.2.0",

@@ -73,6 +73,8 @@ export interface GameResult {
   duration?: number;
   drawing?: string; // base64 image data
   aiCallLog?: AICallLog; // 添加AI调用日志
+  sessionId?: string; // 游戏会话ID
+  userId?: string; // 用户ID
 }
 
 export interface DrawingTools {
