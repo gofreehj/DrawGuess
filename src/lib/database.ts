@@ -2,6 +2,7 @@ import Database from 'better-sqlite3';
 import * as path from 'path';
 import * as fs from 'fs';
 import { GameSession, Prompt, User } from '../types/game';
+import { getDatabaseConfig } from './database-config';
 
 // Database connection instance
 let db: Database.Database | null = null;
@@ -14,18 +15,26 @@ export function initializeDatabase(): Database.Database {
     return db;
   }
 
-  // Create database file in the data directory
-  const dataDir = path.join(process.cwd(), 'data');
-  const dbPath = path.join(dataDir, 'game.db');
+  const config = getDatabaseConfig();
   
   try {
-    // Ensure data directory exists
-    if (!fs.existsSync(dataDir)) {
-      fs.mkdirSync(dataDir, { recursive: true });
-      console.log('Created data directory:', dataDir);
+    if (config.type === 'memory') {
+      // 使用内存数据库
+      db = new Database(':memory:');
+      console.log('✅ Initialized in-memory database');
+    } else {
+      // 使用文件数据库
+      const dataDir = path.dirname(config.path!);
+      
+      // 确保数据目录存在
+      if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
+        console.log('Created data directory:', dataDir);
+      }
+      
+      db = new Database(config.path!);
+      console.log('✅ Initialized SQLite database:', config.path);
     }
-    
-    db = new Database(dbPath);
     
     // Enable foreign keys
     db.pragma('foreign_keys = ON');
@@ -33,10 +42,10 @@ export function initializeDatabase(): Database.Database {
     // Create tables
     createTables();
     
-    console.log('Database initialized successfully');
+    console.log('✅ Database initialized successfully');
     return db;
   } catch (error) {
-    console.error('Failed to initialize database:', error);
+    console.error('❌ Failed to initialize database:', error);
     throw error;
   }
 }

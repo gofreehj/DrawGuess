@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getActivePrompts, getGameStatistics } from '@/lib/database';
 import { initializeDatabaseWithSeedData, verifyDatabaseStructure } from '@/lib/init-database';
 import { isAppInitialized } from '@/lib/startup';
+import { getDatabaseConfig, getDatabaseInfo } from '@/lib/database-config';
 
 export async function GET(request: NextRequest) {
   try {
@@ -27,13 +28,21 @@ export async function GET(request: NextRequest) {
     // 获取数据库状态
     const prompts = getActivePrompts();
     const stats = getGameStatistics();
+    const dbConfig = getDatabaseConfig();
     
     return NextResponse.json({
       success: true,
       message: 'Database status check completed',
       data: {
+        environment: {
+          isVercel: !!process.env.VERCEL,
+          isServerless: dbConfig.isServerless,
+          nodeEnv: process.env.NODE_ENV
+        },
         appInitialized: isAppInitialized(),
         database: {
+          type: dbConfig.type,
+          info: getDatabaseInfo(),
           tablesExist: ['users', 'prompts', 'game_sessions'],
           totalPrompts: prompts.length,
           promptSamples: prompts.slice(0, 3).map(p => ({ 
