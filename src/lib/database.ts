@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3';
 import * as path from 'path';
+import * as fs from 'fs';
 import { GameSession, Prompt, User } from '../types/game';
 
 // Database connection instance
@@ -14,9 +15,16 @@ export function initializeDatabase(): Database.Database {
   }
 
   // Create database file in the data directory
-  const dbPath = path.join(process.cwd(), 'data', 'game.db');
+  const dataDir = path.join(process.cwd(), 'data');
+  const dbPath = path.join(dataDir, 'game.db');
   
   try {
+    // Ensure data directory exists
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+      console.log('Created data directory:', dataDir);
+    }
+    
     db = new Database(dbPath);
     
     // Enable foreign keys
