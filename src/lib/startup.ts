@@ -15,10 +15,15 @@ export async function initializeApp(): Promise<void> {
   }
 
   try {
-    console.log('🚀 Initializing application...');
+    // 只在开发环境或首次运行时显示日志
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🚀 Initializing application...');
+    }
     
-    // 初始化数据库
-    initializeDatabaseWithSeedData();
+    // 初始化数据库（仅在服务器端或首次客户端访问时）
+    if (typeof window === 'undefined' || !isInitialized) {
+      initializeDatabaseWithSeedData();
+    }
     
     // 初始化数据管理器（仅在客户端）
     if (typeof window !== 'undefined') {
@@ -31,7 +36,10 @@ export async function initializeApp(): Promise<void> {
     }
     
     isInitialized = true;
-    console.log('✅ Application initialized successfully');
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✅ Application initialized successfully');
+    }
   } catch (error) {
     console.error('❌ Application initialization failed:', error);
     // 不抛出错误，让应用继续运行
@@ -47,13 +55,19 @@ export function initializeAppSync(): void {
   }
 
   try {
-    console.log('🚀 Initializing application (sync)...');
+    // 只在开发环境显示日志
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🚀 Initializing application (sync)...');
+    }
     
     // 只初始化数据库，数据管理器将在首次使用时初始化
     initializeDatabaseWithSeedData();
     
     isInitialized = true;
-    console.log('✅ Application initialized successfully (sync)');
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✅ Application initialized successfully (sync)');
+    }
   } catch (error) {
     console.error('❌ Application initialization failed:', error);
     // 不抛出错误，让应用继续运行

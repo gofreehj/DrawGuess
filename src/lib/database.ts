@@ -7,11 +7,14 @@ import { getDatabaseConfig } from './database-config';
 // Database connection instance
 let db: Database.Database | null = null;
 
+// Track initialization state
+let isInitialized = false;
+
 /**
  * Initialize database connection and create tables if they don't exist
  */
 export function initializeDatabase(): Database.Database {
-  if (db) {
+  if (db && isInitialized) {
     return db;
   }
 
@@ -21,7 +24,10 @@ export function initializeDatabase(): Database.Database {
     if (config.type === 'memory') {
       // 使用内存数据库
       db = new Database(':memory:');
-      console.log('✅ Initialized in-memory database');
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ Initialized in-memory database');
+      }
     } else {
       // 使用文件数据库
       const dataDir = path.dirname(config.path!);
@@ -29,11 +35,17 @@ export function initializeDatabase(): Database.Database {
       // 确保数据目录存在
       if (!fs.existsSync(dataDir)) {
         fs.mkdirSync(dataDir, { recursive: true });
-        console.log('Created data directory:', dataDir);
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Created data directory:', dataDir);
+        }
       }
       
       db = new Database(config.path!);
-      console.log('✅ Initialized SQLite database:', config.path);
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ Initialized SQLite database:', config.path);
+      }
     }
     
     // Enable foreign keys
@@ -42,7 +54,12 @@ export function initializeDatabase(): Database.Database {
     // Create tables
     createTables();
     
-    console.log('✅ Database initialized successfully');
+    isInitialized = true;
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✅ Database initialized successfully');
+    }
+    
     return db;
   } catch (error) {
     console.error('❌ Failed to initialize database:', error);
@@ -176,7 +193,9 @@ function createTables(): void {
     )
   `);
 
-  console.log('Database tables created successfully');
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Database tables created successfully');
+  }
 }
 
 // ==================== USER OPERATIONS ====================

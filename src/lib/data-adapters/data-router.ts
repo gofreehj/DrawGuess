@@ -49,7 +49,10 @@ export class DataRouterImpl implements DataRouter {
 
           try {
             await adapter.initialize();
-            console.log(`✅ Initialized adapter: ${adapterConfig.name}`);
+            
+            if (process.env.NODE_ENV === 'development') {
+              console.log(`✅ Initialized adapter: ${adapterConfig.name}`);
+            }
           } catch (error) {
             console.warn(`⚠️ Failed to initialize adapter ${adapterConfig.name}:`, error);
           }
@@ -62,11 +65,13 @@ export class DataRouterImpl implements DataRouter {
       // 启用自动切换
       if (this.config.autoSwitch && typeof window !== 'undefined') {
         this.enableAutoSwitch(true);
-      } else if (typeof window === 'undefined') {
+      } else if (typeof window === 'undefined' && process.env.NODE_ENV === 'development') {
         console.log('🚫 Auto-switch disabled on server side');
       }
 
-      console.log(`🚀 Data router initialized with ${this.adapters.size} adapters`);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`🚀 Data router initialized with ${this.adapters.size} adapters`);
+      }
     } catch (error) {
       console.error('Failed to initialize data router:', error);
       throw error;
@@ -82,7 +87,10 @@ export class DataRouterImpl implements DataRouter {
 
   addAdapter(adapter: DataAdapter): void {
     this.adapters.set(adapter.name, adapter);
-    console.log(`Added adapter: ${adapter.name}`);
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Added adapter: ${adapter.name}`);
+    }
   }
 
   removeAdapter(name: string): void {
@@ -285,7 +293,9 @@ export class DataRouterImpl implements DataRouter {
     // Supabase (priority: 1) should be preferred over local (priority: 2)
     sortedConfigs = sortedConfigs.sort((a, b) => a.priority - b.priority);
 
-    console.log(`🔍 Checking ${sortedConfigs.length} adapters on ${isServerSide ? 'server' : 'client'} side...`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`🔍 Checking ${sortedConfigs.length} adapters on ${isServerSide ? 'server' : 'client'} side...`);
+    }
     
     for (const config of sortedConfigs) {
       const adapter = this.adapters.get(config.name);
@@ -294,15 +304,22 @@ export class DataRouterImpl implements DataRouter {
         continue;
       }
 
-      console.log(`🔍 Testing adapter: ${config.name} (${adapter.type})`);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`🔍 Testing adapter: ${config.name} (${adapter.type})`);
+      }
 
       try {
         const health = await adapter.isHealthy();
-        console.log(`📊 Health check for ${config.name}:`, { isHealthy: health.isHealthy, error: health.error });
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`📊 Health check for ${config.name}:`, { isHealthy: health.isHealthy, error: health.error });
+        }
         
         if (health.isHealthy) {
           this.currentAdapterName = config.name;
-          console.log(`✅ Selected adapter: ${config.name} (${isServerSide ? 'server' : 'client'} side)`);
+          
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`✅ Selected adapter: ${config.name} (${isServerSide ? 'server' : 'client'} side)`);
+          }
           return;
         }
       } catch (error) {
@@ -317,7 +334,10 @@ export class DataRouterImpl implements DataRouter {
 
       if (localAdapter) {
         this.currentAdapterName = localAdapter.name;
-        console.log(`Fallback to local adapter: ${localAdapter.name}`);
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`Fallback to local adapter: ${localAdapter.name}`);
+        }
         return;
       }
     }

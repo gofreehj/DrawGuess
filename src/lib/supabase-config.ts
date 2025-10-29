@@ -6,14 +6,16 @@ export const supabaseConfig = {
   enableSupabase: process.env.NEXT_PUBLIC_ENABLE_SUPABASE === 'true',
 }
 
-// Debug: Log configuration on startup
-console.log('🔧 Supabase Config Debug:', {
-  enableSupabase: supabaseConfig.enableSupabase,
-  hasUrl: !!supabaseConfig.url,
-  hasAnonKey: !!supabaseConfig.anonKey,
-  hasServiceKey: !!supabaseConfig.serviceRoleKey,
-  rawEnvValue: process.env.NEXT_PUBLIC_ENABLE_SUPABASE
-});
+// Debug: Log configuration on startup (only in development)
+if (process.env.NODE_ENV === 'development') {
+  console.log('🔧 Supabase Config Debug:', {
+    enableSupabase: supabaseConfig.enableSupabase,
+    hasUrl: !!supabaseConfig.url,
+    hasAnonKey: !!supabaseConfig.anonKey,
+    hasServiceKey: !!supabaseConfig.serviceRoleKey,
+    rawEnvValue: process.env.NEXT_PUBLIC_ENABLE_SUPABASE
+  });
+}
 
 // Validate required Supabase environment variables
 export function validateSupabaseConfig() {

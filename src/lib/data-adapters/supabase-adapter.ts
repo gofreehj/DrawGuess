@@ -24,7 +24,9 @@ export class SupabaseDataAdapter implements DataAdapter {
 
   async initialize(): Promise<void> {
     try {
-      console.log('🔧 Supabase adapter initialization - isSupabaseEnabled():', isSupabaseEnabled());
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔧 Supabase adapter initialization - isSupabaseEnabled():', isSupabaseEnabled());
+      }
       
       if (!isSupabaseEnabled()) {
         throw new Error('Supabase is not available or configured');
@@ -35,11 +37,17 @@ export class SupabaseDataAdapter implements DataAdapter {
         // Client side - use browser client
         this.client = createClient();
         this.initialized = true;
-        console.log('✅ Supabase adapter initialized on client side');
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ Supabase adapter initialized on client side');
+        }
       } else {
         // Server side - client will be created when needed
         this.initialized = true;
-        console.log('✅ Supabase adapter initialized on server side');
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ Supabase adapter initialized on server side');
+        }
       }
     } catch (error) {
       console.error('Failed to initialize Supabase adapter:', error);

@@ -13,22 +13,30 @@ export function initializeDatabaseWithSeedData(): void {
   }
   
   try {
-    console.log('Initializing database...');
+    // 只在开发环境显示详细日志
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Initializing database...');
+    }
     
     // Initialize database and create tables
     const db = initializeDatabase();
-    console.log('✓ Database tables created successfully');
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('✓ Database tables created successfully');
+    }
     
     // Check if prompts already exist
     const existingPrompts = getActivePrompts();
     if (existingPrompts.length >= 20) {
-      console.log(`✓ Database already has ${existingPrompts.length} prompts`);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`✓ Database already has ${existingPrompts.length} prompts`);
+      }
       isInitialized = true;
       return;
     }
     
     // If we have some prompts but less than 20, we'll add more
-    if (existingPrompts.length > 0) {
+    if (existingPrompts.length > 0 && process.env.NODE_ENV === 'development') {
       console.log(`Database has ${existingPrompts.length} prompts, adding more to reach 20+`);
     }
     

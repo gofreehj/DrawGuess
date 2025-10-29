@@ -36,13 +36,19 @@ export class DataManager {
     try {
       await this.proxy.initialize();
       this.initialized = true;
-      console.log('✅ Data manager initialized');
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ Data manager initialized');
+      }
     } catch (error) {
       console.error('❌ Failed to initialize data manager:', error);
       // On server side, still mark as initialized but with limited functionality
       if (typeof window === 'undefined') {
         this.initialized = true;
-        console.log('⚠️ Data manager initialized in server mode (limited functionality)');
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('⚠️ Data manager initialized in server mode (limited functionality)');
+        }
       } else {
         throw error;
       }

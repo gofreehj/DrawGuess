@@ -18,7 +18,9 @@ export function getDatabaseConfig(): DatabaseConfig {
   
   if (isServerless) {
     // 在无服务器环境中使用内存数据库
-    console.log('🔧 Using in-memory database for serverless environment');
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔧 Using in-memory database for serverless environment');
+    }
     return {
       type: 'memory',
       isServerless: true
@@ -28,7 +30,9 @@ export function getDatabaseConfig(): DatabaseConfig {
     const dataDir = path.join(process.cwd(), 'data');
     const dbPath = path.join(dataDir, 'game.db');
     
-    console.log('🔧 Using SQLite file database for local development');
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔧 Using SQLite file database for local development');
+    }
     return {
       type: 'sqlite',
       path: dbPath,
