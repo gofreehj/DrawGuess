@@ -60,8 +60,8 @@ class PalmRejectionSystem {
     // Update safe zones based on canvas dimensions
     this.updateSafeZonesForCanvas();
     
-    // Set up resize observer to update bounds
-    if ('ResizeObserver' in window) {
+    // Set up resize observer to update bounds (only in browser environment)
+    if (typeof window !== 'undefined' && 'ResizeObserver' in window) {
       const resizeObserver = new ResizeObserver(() => {
         this.canvasBounds = canvasElement.getBoundingClientRect();
         this.updateSafeZonesForCanvas();

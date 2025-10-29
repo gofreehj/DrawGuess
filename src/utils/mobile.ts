@@ -4,6 +4,23 @@ import type { DeviceInfo, ViewportInfo, PerformanceMetrics, MobileNetworkInforma
  * Detect device information and capabilities
  */
 export function getDeviceInfo(): DeviceInfo {
+  // Check if we're in a browser environment
+  if (typeof window === 'undefined') {
+    // Return default values for SSR
+    return {
+      userAgent: '',
+      platform: '',
+      screenSize: { width: 1920, height: 1080 },
+      pixelRatio: 1,
+      touchSupport: false,
+      orientation: 'unknown',
+      isIOS: false,
+      isAndroid: false,
+      isMobile: false,
+      isTablet: false,
+    }
+  }
+
   const userAgent = navigator.userAgent
   const platform = navigator.platform
   
@@ -33,6 +50,16 @@ export function getDeviceInfo(): DeviceInfo {
  * Get current viewport information including safe areas
  */
 export function getViewportInfo(): ViewportInfo {
+  // Check if we're in a browser environment
+  if (typeof window === 'undefined') {
+    return {
+      width: 1920,
+      height: 1080,
+      orientation: 'landscape',
+      safeArea: { top: 0, right: 0, bottom: 0, left: 0 },
+    }
+  }
+
   const width = window.innerWidth
   const height = window.innerHeight
   const orientation = width > height ? 'landscape' : 'portrait'
@@ -76,30 +103,34 @@ export function getMobileCapabilities() {
  * Vibrate device if supported
  */
 export function vibrate(pattern: number | number[]): boolean {
-  if (navigator.vibrate) {
-    return navigator.vibrate(pattern)
+  if (typeof navigator === 'undefined' || !navigator.vibrate) {
+    return false
   }
-  return false
+  return navigator.vibrate(pattern)
 }
 
 /**
  * Get battery information if supported
  */
 export async function getBatteryInfo(): Promise<any | null> {
-  if (navigator.getBattery) {
-    try {
-      return await navigator.getBattery()
-    } catch (error) {
-      console.warn('Battery API not available:', error)
-    }
+  if (typeof navigator === 'undefined' || !navigator.getBattery) {
+    return null
   }
-  return null
+  try {
+    return await navigator.getBattery()
+  } catch (error) {
+    console.warn('Battery API not available:', error)
+    return null
+  }
 }
 
 /**
  * Get network information if supported
  */
 export function getNetworkInfo(): MobileNetworkInformation | null {
+  if (typeof navigator === 'undefined') {
+    return null
+  }
   return navigator.connection || null
 }
 
@@ -137,6 +168,9 @@ export function unlockOrientation(): boolean {
  * Check if device is in landscape mode
  */
 export function isLandscape(): boolean {
+  if (typeof window === 'undefined') {
+    return true // Default to landscape for SSR
+  }
   return window.innerWidth > window.innerHeight
 }
 
@@ -144,6 +178,9 @@ export function isLandscape(): boolean {
  * Check if device is in portrait mode
  */
 export function isPortrait(): boolean {
+  if (typeof window === 'undefined') {
+    return false // Default to landscape for SSR
+  }
   return window.innerWidth <= window.innerHeight
 }
 
@@ -151,6 +188,15 @@ export function isPortrait(): boolean {
  * Get performance metrics
  */
 export function getPerformanceMetrics(): Partial<PerformanceMetrics> {
+  // Check if we're in a browser environment
+  if (typeof window === 'undefined' || typeof performance === 'undefined') {
+    return {
+      memoryUsage: 0,
+      networkLatency: 0,
+      connectionType: 'unknown',
+    }
+  }
+
   const metrics: Partial<PerformanceMetrics> = {}
   
   // Memory usage (if available)

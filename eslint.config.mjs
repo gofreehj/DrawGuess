@@ -1,18 +1,13 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
-import jsxA11y from "eslint-plugin-jsx-a11y";
 
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   {
-    plugins: {
-      "jsx-a11y": jsxA11y,
-    },
     rules: {
-      // Mobile-specific rules
-      "jsx-a11y/touch-target-size": "error",
+      // Mobile-specific accessibility rules
       "jsx-a11y/no-static-element-interactions": "warn",
       "jsx-a11y/click-events-have-key-events": "warn",
       
@@ -20,11 +15,9 @@ const eslintConfig = defineConfig([
       "react-hooks/exhaustive-deps": "error",
       "no-console": ["warn", { allow: ["warn", "error"] }],
       
-      // TypeScript strict rules
+      // TypeScript basic rules (no type information required)
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
       "@typescript-eslint/no-explicit-any": "warn",
-      "@typescript-eslint/prefer-nullish-coalescing": "error",
-      "@typescript-eslint/prefer-optional-chain": "error",
     },
   },
   // Override default ignores of eslint-config-next.

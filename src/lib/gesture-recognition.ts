@@ -1,9 +1,9 @@
-import * as Hammer from 'hammerjs';
+// Hammer.js will be dynamically imported to avoid SSR issues
 import { GestureEvent, GestureData, GestureConfig } from '@/types/mobile';
 import { throttle, debounce } from '@/utils/mobile';
 
 export interface GestureRecognitionEngine {
-  initialize: (element: HTMLElement, config: GestureConfig) => void;
+  initialize: (element: HTMLElement, config: GestureConfig) => Promise<void>;
   destroy: () => void;
   on: (eventType: string, handler: (event: GestureEvent) => void) => void;
   off: (eventType: string, handler?: (event: GestureEvent) => void) => void;
@@ -35,14 +35,23 @@ class GestureRecognizer implements GestureRecognitionEngine {
     this.performanceOptimizer = new GesturePerformanceOptimizer();
   }
 
-  initialize(element: HTMLElement, config: GestureConfig): void {
+  async initialize(element: HTMLElement, config: GestureConfig): Promise<void> {
+    // Only initialize on client side
+    if (typeof window === 'undefined') {
+      return;
+    }
+
     this.element = element;
     this.config = { ...this.config, ...config };
     
+    // Dynamically import Hammer.js
+    const Hammer = await import('hammerjs');
+    const HammerConstructor = Hammer.default || Hammer;
+    
     // Create Hammer.js instance
-    this.hammer = new Hammer.Manager(element, {
-      recognizers: this.createRecognizers(),
-      inputClass: Hammer.TouchInput
+    this.hammer = new HammerConstructor.Manager(element, {
+      recognizers: this.createRecognizers(HammerConstructor),
+      inputClass: HammerConstructor.TouchInput
     });
 
     // Configure gesture recognition
@@ -97,7 +106,7 @@ class GestureRecognizer implements GestureRecognitionEngine {
     return Array.from(this.activeGestures);
   }
 
-  private createRecognizers(): any[] {
+  private createRecognizers(Hammer: any): any[] {
     const recognizers: any[] = [];
 
     // Pan recognizer
@@ -510,17 +519,17 @@ export const defaultGestureConfig: GestureConfig = {
 };
 
 // Utility function to create gesture handler
-export function createGestureHandler(
+export async function createGestureHandler(
   element: HTMLElement,
   handlers: GestureHandler,
   config: Partial<GestureConfig> = {}
-): GestureRecognitionEngine {
+): Promise<GestureRecognitionEngine> {
   const gestureEngine = createGestureRecognitionEngine({
     ...defaultGestureConfig,
     ...config
   });
 
-  gestureEngine.initialize(element, { ...defaultGestureConfig, ...config });
+  await gestureEngine.initialize(element, { ...defaultGestureConfig, ...config });
 
   // Set up handlers
   if (handlers.onPinchZoom) {
