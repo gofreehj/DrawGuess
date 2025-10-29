@@ -1,5 +1,5 @@
 import * as Hammer from 'hammerjs';
-import { GestureEvent, GestureData, GestureConfig, TouchPoint } from '@/types/mobile';
+import { GestureEvent, GestureData, GestureConfig } from '@/types/mobile';
 import { throttle, debounce } from '@/utils/mobile';
 
 export interface GestureRecognitionEngine {

@@ -7,7 +7,11 @@ import {
   TouchPoint, 
   GestureEvent, 
   TouchCanvasProps,
-  PerformanceMetrics 
+  PerformanceMetrics,
+  DrawingData,
+  StrokeData,
+  CanvasMetadata,
+  DrawingTool
 } from '@/types/mobile';
 import { 
   vibrate, 
@@ -16,34 +20,7 @@ import {
   getPerformanceMetrics 
 } from '@/utils/mobile';
 
-interface DrawingData {
-  imageData: string;
-  strokes: StrokeData[];
-  metadata: CanvasMetadata;
-}
-
-interface StrokeData {
-  id: string;
-  points: TouchPoint[];
-  tool: DrawingTool;
-  timestamp: number;
-  pressure?: number;
-}
-
-interface CanvasMetadata {
-  width: number;
-  height: number;
-  devicePixelRatio: number;
-  timestamp: number;
-  strokeCount: number;
-}
-
-interface DrawingTool {
-  type: 'brush' | 'eraser';
-  size: number;
-  color: string;
-  opacity: number;
-}
+// Types are now imported from @/types/mobile
 
 interface EnhancedTouchCanvasProps extends TouchCanvasProps {
   onPerformanceUpdate?: (metrics: PerformanceMetrics) => void;
@@ -83,6 +60,7 @@ export default function EnhancedTouchCanvas({
   });
 
   // Performance monitoring
+  // Performance monitoring refs
   const frameTimeRef = useRef<number>(0);
   const lastFrameTimeRef = useRef<number>(0);
   const strokeIdRef = useRef<number>(0);
@@ -381,17 +359,13 @@ export default function EnhancedTouchCanvas({
     const canvas = fabricCanvasRef.current;
     const imageData = canvas.toDataURL({ format: 'png', quality: 0.8, multiplier: 1 });
     
-    // Create drawing data
-    const drawingData: DrawingData = {
-      imageData,
-      strokes: [currentStroke],
-      metadata: {
-        width,
-        height,
-        devicePixelRatio: window.devicePixelRatio,
-        timestamp: Date.now(),
-        strokeCount: 1
-      }
+    // Create drawing data for future use
+    const drawingMetadata: CanvasMetadata = {
+      width,
+      height,
+      devicePixelRatio: window.devicePixelRatio,
+      timestamp: Date.now(),
+      strokeCount: 1
     };
     
     // Throttled update to parent
@@ -442,7 +416,8 @@ export default function EnhancedTouchCanvas({
     if (!fabricCanvasRef.current || points.length < 2) return;
     
     const canvas = fabricCanvasRef.current;
-    const ctx = canvas.getContext() as CanvasRenderingContext2D;
+    const canvasElement = canvas.getElement();
+    const ctx = canvasElement.getContext('2d') as CanvasRenderingContext2D;
     
     ctx.save();
     ctx.globalCompositeOperation = tool.type === 'eraser' ? 'destination-out' : 'source-over';
