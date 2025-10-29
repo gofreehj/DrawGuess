@@ -4,7 +4,7 @@ export * from './types';
 export { LocalDataAdapter } from './local-adapter';
 export { SupabaseDataAdapter } from './supabase-adapter';
 export { DataRouterImpl, DataRouterProxy } from './data-router';
-export { DataManager, dataManager, initializeDataManager, getDataManager } from './data-manager';
+export { DataManager, initializeDataManager, getDataManager } from './data-manager';
 
 // 适配器工厂函数
 import { DataAdapter, AdapterConfig } from './types';

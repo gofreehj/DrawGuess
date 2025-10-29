@@ -1,17 +1,17 @@
 import { NextRequest } from 'next/server';
-import { getRandomPrompt } from '@/lib/database';
-import { initializeDatabaseWithSeedData } from '@/lib/init-database';
+import { databaseManager } from '@/lib/database-manager';
+import { ensureServerDatabaseInitialized } from '@/lib/server-startup';
 import { createErrorResponse, ERROR_CODES, handleError, createErrorResponseFromAPIError } from '@/lib/error-handler';
 import { getDataManager } from '@/lib/data-adapters';
 
 // API route for starting a new game
 export async function POST(request: NextRequest) {
   try {
-    // Initialize database with seed data if needed (especially for serverless environments)
-    initializeDatabaseWithSeedData();
+    // 确保服务器数据库已初始化（容错机制）
+    await ensureServerDatabaseInitialized();
     
     // Get a random prompt from the database
-    const prompt = getRandomPrompt();
+    const prompt = databaseManager.getRandomPrompt();
     
     if (!prompt) {
       return createErrorResponse(

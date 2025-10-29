@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getActivePrompts, getGameStatistics } from '@/lib/database';
-import { initializeDatabaseWithSeedData, verifyDatabaseStructure } from '@/lib/init-database';
+import { databaseManager } from '@/lib/database-manager';
+import { ensureServerDatabaseInitialized, initializeServerDatabase } from '@/lib/server-startup';
+import { verifyDatabaseStructure } from '@/lib/init-database';
 import { isAppInitialized } from '@/lib/startup';
 import { getDatabaseConfig, getDatabaseInfo } from '@/lib/database-config';
 
@@ -12,7 +13,10 @@ export async function GET(request: NextRequest) {
     // 如果是强制重新初始化
     if (action === 'reinit') {
       console.log('🔄 Force reinitializing database...');
-      initializeDatabaseWithSeedData();
+      await initializeServerDatabase();
+    } else {
+      // 确保服务器数据库已初始化
+      await ensureServerDatabaseInitialized();
     }
     
     // 验证数据库结构
@@ -26,8 +30,8 @@ export async function GET(request: NextRequest) {
     }
     
     // 获取数据库状态
-    const prompts = getActivePrompts();
-    const stats = getGameStatistics();
+    const prompts = databaseManager.getActivePrompts();
+    const stats = databaseManager.getGameStatistics();
     const dbConfig = getDatabaseConfig();
     
     return NextResponse.json({

@@ -13,7 +13,7 @@ export class DataManager {
   private initialized = false;
 
   private constructor(config?: Partial<DataRouterConfig>) {
-    this.router = new DataRouterImpl(config);
+    this.router = DataRouterImpl.getInstance(config);
     this.proxy = new DataRouterProxy(this.router);
   }
 
@@ -37,8 +37,9 @@ export class DataManager {
       await this.proxy.initialize();
       this.initialized = true;
       
-      if (process.env.NODE_ENV === 'development') {
-        console.log('✅ Data manager initialized');
+      // Only log once
+      if (!this.initialized) {
+        console.log('✅ Data manager ready');
       }
     } catch (error) {
       console.error('❌ Failed to initialize data manager:', error);
@@ -224,8 +225,7 @@ export class DataManager {
   }
 }
 
-// 导出默认实例
-export const dataManager = DataManager.getInstance();
+// 不再导出默认实例，避免模块导入时初始化
 
 // 导出便捷函数
 export async function initializeDataManager(config?: Partial<DataRouterConfig>): Promise<DataManager> {

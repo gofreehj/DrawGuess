@@ -12,6 +12,12 @@ export function initializeDatabaseWithSeedData(): void {
     return;
   }
   
+  // Skip during Next.js build phase to prevent build-time database connections
+  if (process.env.NEXT_PHASE && process.env.NEXT_PHASE !== 'phase-production-server') {
+    console.log('Skipping database initialization during build phase');
+    return;
+  }
+  
   try {
     // 只在开发环境显示详细日志
     if (process.env.NODE_ENV === 'development') {

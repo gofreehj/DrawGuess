@@ -15,15 +15,36 @@ import { createAdapter, getDefaultAdapterConfigs } from './index';
  * 数据路由器实现
  * 管理多个数据适配器，提供自动切换和同步功能
  */
+// Use process-level symbols to prevent multiple instances across different contexts
+const ROUTER_INSTANCE_FLAG = Symbol.for('datarouter.instance');
+const ROUTER_INITIALIZING_FLAG = Symbol.for('datarouter.initializing');
+
 export class DataRouterImpl implements DataRouter {
+  private static get instance(): DataRouterImpl | null {
+    return (global as any)[ROUTER_INSTANCE_FLAG] || null;
+  }
+  
+  private static set instance(value: DataRouterImpl | null) {
+    (global as any)[ROUTER_INSTANCE_FLAG] = value;
+  }
+  
+  private static get isInitializing(): boolean {
+    return (global as any)[ROUTER_INITIALIZING_FLAG] || false;
+  }
+  
+  private static set isInitializing(value: boolean) {
+    (global as any)[ROUTER_INITIALIZING_FLAG] = value;
+  }
+  
   private adapters = new Map<string, DataAdapter>();
   private currentAdapterName: string | null = null;
   private config: DataRouterConfig;
   private autoSwitchEnabled = false;
   private healthCheckInterval: NodeJS.Timeout | null = null;
   private syncInterval: NodeJS.Timeout | null = null;
+  private initialized = false;
 
-  constructor(config?: Partial<DataRouterConfig>) {
+  private constructor(config?: Partial<DataRouterConfig>) {
     // Disable auto-sync on server side
     const isServerSide = typeof window === 'undefined';
 
@@ -39,6 +60,23 @@ export class DataRouterImpl implements DataRouter {
     this.initialize();
   }
 
+  static getInstance(config?: Partial<DataRouterConfig>): DataRouterImpl {
+    if (DataRouterImpl.instance && DataRouterImpl.instance.initialized) {
+      return DataRouterImpl.instance;
+    }
+
+    if (DataRouterImpl.isInitializing) {
+      // If already initializing, wait or return existing instance
+      if (DataRouterImpl.instance) {
+        return DataRouterImpl.instance;
+      }
+    }
+
+    DataRouterImpl.isInitializing = true;
+    DataRouterImpl.instance = new DataRouterImpl(config);
+    return DataRouterImpl.instance;
+  }
+
   private async initialize(): Promise<void> {
     try {
       // 初始化所有启用的适配器
@@ -50,8 +88,9 @@ export class DataRouterImpl implements DataRouter {
           try {
             await adapter.initialize();
             
-            if (process.env.NODE_ENV === 'development') {
-              console.log(`✅ Initialized adapter: ${adapterConfig.name}`);
+            // Only log adapter initialization once
+            if (!this.initialized) {
+              console.log(`✅ ${adapterConfig.name} adapter ready`);
             }
           } catch (error) {
             console.warn(`⚠️ Failed to initialize adapter ${adapterConfig.name}:`, error);
@@ -69,8 +108,11 @@ export class DataRouterImpl implements DataRouter {
         console.log('🚫 Auto-switch disabled on server side');
       }
 
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`🚀 Data router initialized with ${this.adapters.size} adapters`);
+      // Mark as initialized and log only once
+      if (!this.initialized) {
+        this.initialized = true;
+        DataRouterImpl.isInitializing = false;
+        console.log(`🚀 Data router ready (${this.adapters.size} adapters)`);
       }
     } catch (error) {
       console.error('Failed to initialize data router:', error);
@@ -317,8 +359,9 @@ export class DataRouterImpl implements DataRouter {
         if (health.isHealthy) {
           this.currentAdapterName = config.name;
           
-          if (process.env.NODE_ENV === 'development') {
-            console.log(`✅ Selected adapter: ${config.name} (${isServerSide ? 'server' : 'client'} side)`);
+          // Only log adapter selection once
+          if (!this.initialized) {
+            console.log(`✅ Selected ${config.name} adapter`);
           }
           return;
         }

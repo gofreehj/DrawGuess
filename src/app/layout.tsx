@@ -4,7 +4,7 @@ import "../styles/animations.css";
 import { initializeApp } from "../lib/startup";
 import Providers from "@/components/Providers";
 
-// 在服务器端初始化应用
+// 在服务器端初始化应用（仅客户端相关的初始化）
 if (typeof window === 'undefined') {
   initializeApp();
 }

@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { deleteGameSessions, deleteAllGameSessions, deleteOldGameSessions } from '@/lib/database';
+import { databaseManager } from '@/lib/database-manager';
 import { createErrorResponse, ERROR_CODES, handleError, createErrorResponseFromAPIError } from '@/lib/error-handler';
 import { getDataManager } from '@/lib/data-adapters';
 import { HistoryOptions } from '@/lib/data-adapters/types';
@@ -143,12 +143,12 @@ export async function DELETE(request: NextRequest) {
             400
           );
         }
-        deletedCount = deleteGameSessions(gameIds);
+        deletedCount = databaseManager.deleteGameSessions(gameIds);
         break;
 
       case 'all':
         // Delete all game sessions
-        deletedCount = deleteAllGameSessions();
+        deletedCount = databaseManager.deleteAllGameSessions();
         break;
 
       case 'old':
@@ -162,7 +162,7 @@ export async function DELETE(request: NextRequest) {
             400
           );
         }
-        deletedCount = deleteOldGameSessions(daysOld);
+        deletedCount = databaseManager.deleteOldGameSessions(daysOld);
         break;
 
       default:

@@ -7,15 +7,33 @@ import { getDatabaseConfig } from './database-config';
 // Database connection instance
 let db: Database.Database | null = null;
 
-// Track initialization state
-let isInitialized = false;
+// Global initialization state - use process-level flag to prevent multiple initializations
+const INIT_FLAG = Symbol.for('database.initialized');
+let isInitialized = (global as any)[INIT_FLAG] || false;
 
 /**
  * Initialize database connection and create tables if they don't exist
  */
 export function initializeDatabase(): Database.Database {
+  // Skip during Next.js build phase to prevent build-time database connections
+  if (process.env.NEXT_PHASE && process.env.NEXT_PHASE !== 'phase-production-server') {
+    // Return a mock database instance during build
+    throw new Error('Database not available during build phase');
+  }
+  
+  // Check process-level initialization flag first
+  isInitialized = (global as any)[INIT_FLAG] || false;
+  
+  // Return existing instance if already initialized
   if (db && isInitialized) {
     return db;
+  }
+  
+  // If already initialized but db is null, something went wrong
+  if (isInitialized && !db) {
+    console.warn('Database was marked as initialized but instance is null, reinitializing...');
+    isInitialized = false;
+    (global as any)[INIT_FLAG] = false;
   }
 
   const config = getDatabaseConfig();
@@ -43,8 +61,9 @@ export function initializeDatabase(): Database.Database {
       
       db = new Database(config.path!);
       
-      if (process.env.NODE_ENV === 'development') {
-        console.log('✅ Initialized SQLite database:', config.path);
+      // Only log on first initialization
+      if (!isInitialized) {
+        console.log('✅ Database ready');
       }
     }
     
@@ -54,10 +73,11 @@ export function initializeDatabase(): Database.Database {
     // Create tables
     createTables();
     
-    isInitialized = true;
-    
-    if (process.env.NODE_ENV === 'development') {
-      console.log('✅ Database initialized successfully');
+    // Mark as initialized only after everything is done
+    if (!isInitialized) {
+      isInitialized = true;
+      (global as any)[INIT_FLAG] = true;
+      console.log('✅ Database ready');
     }
     
     return db;
@@ -96,6 +116,7 @@ export function executeQuery<T = any>(
   params: any[] = []
 ): T[] {
   try {
+    // Only initialize database when actually executing queries
     const database = getDatabase();
     const stmt = database.prepare(query);
     const result = stmt.all(...params);
@@ -193,8 +214,11 @@ function createTables(): void {
     )
   `);
 
-  if (process.env.NODE_ENV === 'development') {
-    console.log('Database tables created successfully');
+  // Only log table creation once per process
+  const tablesCreatedFlag = Symbol.for('database.tables.created');
+  if (!(global as any)[tablesCreatedFlag]) {
+    (global as any)[tablesCreatedFlag] = true;
+    console.log('✅ Tables ready');
   }
 }
 

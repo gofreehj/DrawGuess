@@ -1,7 +1,7 @@
 /**
  * 应用启动时的初始化逻辑
+ * 注意：数据库初始化现在由 database-manager 统一管理
  */
-import { initializeDatabaseWithSeedData } from './init-database';
 import { initializeDataManager } from './data-adapters';
 
 let isInitialized = false;
@@ -20,10 +20,7 @@ export async function initializeApp(): Promise<void> {
       console.log('🚀 Initializing application...');
     }
     
-    // 初始化数据库（仅在服务器端或首次客户端访问时）
-    if (typeof window === 'undefined' || !isInitialized) {
-      initializeDatabaseWithSeedData();
-    }
+    // 数据库初始化现在由 database-manager 按需处理，无需在此初始化
     
     // 初始化数据管理器（仅在客户端）
     if (typeof window !== 'undefined') {
@@ -60,8 +57,7 @@ export function initializeAppSync(): void {
       console.log('🚀 Initializing application (sync)...');
     }
     
-    // 只初始化数据库，数据管理器将在首次使用时初始化
-    initializeDatabaseWithSeedData();
+    // 数据库初始化现在由 database-manager 按需处理，无需在此初始化
     
     isInitialized = true;
     

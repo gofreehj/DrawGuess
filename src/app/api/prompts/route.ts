@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getActivePrompts, createPrompt } from '@/lib/database';
-import { initializeDatabaseWithSeedData } from '@/lib/init-database';
+import { databaseManager } from '@/lib/database-manager';
+import { ensureServerDatabaseInitialized } from '@/lib/server-startup';
 import { Prompt } from '@/types/game';
 import { createErrorResponse, ERROR_CODES, handleError, createErrorResponseFromAPIError } from '@/lib/error-handler';
 
@@ -10,10 +10,10 @@ import { createErrorResponse, ERROR_CODES, handleError, createErrorResponseFromA
  */
 export async function GET() {
   try {
-    // Initialize database with seed data if needed (especially for serverless environments)
-    initializeDatabaseWithSeedData();
+    // 确保服务器数据库已初始化（容错机制）
+    await ensureServerDatabaseInitialized();
     
-    const prompts = getActivePrompts();
+    const prompts = databaseManager.getActivePrompts();
     
     return NextResponse.json({
       success: true,
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
       isActive: body.isActive !== undefined ? body.isActive : true
     };
     
-    const newPrompt = createPrompt(promptData);
+    const newPrompt = databaseManager.createPrompt(promptData);
     
     return NextResponse.json({
       success: true,

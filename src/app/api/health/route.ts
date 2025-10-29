@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getActivePrompts } from '@/lib/database';
-import { initializeDatabaseWithSeedData, verifyDatabaseStructure } from '@/lib/init-database';
+import { databaseManager } from '@/lib/database-manager';
+import { ensureServerDatabaseInitialized } from '@/lib/server-startup';
+import { verifyDatabaseStructure } from '@/lib/init-database';
 import { getDatabaseConfig, getDatabaseInfo } from '@/lib/database-config';
 
 /**
@@ -9,20 +10,18 @@ import { getDatabaseConfig, getDatabaseInfo } from '@/lib/database-config';
  */
 export async function GET() {
   try {
-    // Initialize database if needed
-    initializeDatabaseWithSeedData();
+    // 确保服务器数据库已初始化（容错机制）
+    await ensureServerDatabaseInitialized();
     
     // Get database configuration
     const dbConfig = getDatabaseConfig();
     const dbInfo = getDatabaseInfo();
     
-    // Verify database structure
+    // Verify database structure and get health status
     const structureValid = verifyDatabaseStructure();
+    const healthStatus = databaseManager.healthCheck();
     
-    // Check prompts availability
-    const prompts = getActivePrompts();
-    
-    const healthStatus = {
+    const response = {
       status: 'healthy',
       timestamp: new Date().toISOString(),
       database: {
@@ -30,8 +29,9 @@ export async function GET() {
         isServerless: dbConfig.isServerless,
         info: dbInfo,
         structureValid,
-        promptsCount: prompts.length,
-        hasMinimumPrompts: prompts.length >= 20
+        promptsCount: healthStatus.promptsCount,
+        hasMinimumPrompts: healthStatus.hasMinimumPrompts,
+        stats: healthStatus.stats
       },
       environment: {
         nodeEnv: process.env.NODE_ENV,
@@ -41,11 +41,11 @@ export async function GET() {
     };
     
     // Determine overall health
-    const isHealthy = structureValid && prompts.length > 0;
+    const isHealthy = structureValid && healthStatus.isHealthy;
     
     return NextResponse.json({
       success: true,
-      data: healthStatus
+      data: response
     }, { 
       status: isHealthy ? 200 : 503 
     });
