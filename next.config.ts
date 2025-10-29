@@ -12,20 +12,24 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   generateEtags: isProduction,
   
-  // Image optimization
+  // Image optimization with mobile focus
   images: {
     formats: ['image/webp', 'image/avif'],
     minimumCacheTTL: isProduction ? 3600 : 60,
     dangerouslyAllowSVG: false,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    // Mobile-first device sizes
+    deviceSizes: [375, 414, 640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    // Enable responsive images
+    loader: 'default',
   },
   
   // Performance optimizations
   experimental: {
     optimizeCss: isProduction,
-    optimizePackageImports: ['fabric'],
+    optimizePackageImports: ['fabric', 'framer-motion', 'hammerjs'],
+    webVitalsAttribution: ['CLS', 'LCP', 'FCP', 'FID', 'TTFB'],
   },
   
   // Server external packages (moved from experimental)
@@ -101,7 +105,7 @@ const nextConfig: NextConfig = {
   },
   
   // Output configuration for different deployment targets
-  output: process.env.BUILD_STANDALONE === 'true' ? 'standalone' : undefined,
+  ...(process.env.BUILD_STANDALONE === 'true' ? { output: 'standalone' } : {}),
   
   // Redirects for better SEO
   async redirects() {
@@ -114,6 +118,39 @@ const nextConfig: NextConfig = {
     ];
   },
   
+  // PWA Configuration
+  ...(process.env.NEXT_PWA === 'true' && {
+    pwa: {
+      dest: 'public',
+      register: true,
+      skipWaiting: true,
+      runtimeCaching: [
+        {
+          urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'google-fonts',
+            expiration: {
+              maxEntries: 4,
+              maxAgeSeconds: 365 * 24 * 60 * 60, // 365 days
+            },
+          },
+        },
+        {
+          urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|avif)$/i,
+          handler: 'StaleWhileRevalidate',
+          options: {
+            cacheName: 'images',
+            expiration: {
+              maxEntries: 64,
+              maxAgeSeconds: 24 * 60 * 60, // 24 hours
+            },
+          },
+        },
+      ],
+    },
+  }),
+
   // Webpack optimizations
   webpack: (config, { dev, isServer, webpack }) => {
     // Production-specific webpack optimizations

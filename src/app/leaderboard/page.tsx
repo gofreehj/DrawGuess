@@ -91,14 +91,15 @@ export default function LeaderboardPage() {
         };
       }
       
-      promptStats[game.prompt].total++;
-      promptStats[game.prompt].confidenceSum += game.confidence;
+      const promptStat = promptStats[game.prompt]!;
+      promptStat.total++;
+      promptStat.confidenceSum += game.confidence;
       if (game.isCorrect) {
-        promptStats[game.prompt].correct++;
+        promptStat.correct++;
       }
       
-      if (new Date(game.startTime) > new Date(promptStats[game.prompt].lastPlayed)) {
-        promptStats[game.prompt].lastPlayed = game.startTime;
+      if (new Date(game.startTime) > new Date(promptStat.lastPlayed)) {
+        promptStat.lastPlayed = game.startTime;
       }
 
       // 分类统计
@@ -110,10 +111,11 @@ export default function LeaderboardPage() {
         };
       }
       
-      categoryStats[game.promptCategory].total++;
-      categoryStats[game.promptCategory].confidenceSum += game.confidence;
+      const categoryStat = categoryStats[game.promptCategory]!;
+      categoryStat.total++;
+      categoryStat.confidenceSum += game.confidence;
       if (game.isCorrect) {
-        categoryStats[game.promptCategory].correct++;
+        categoryStat.correct++;
       }
     });
 
@@ -154,9 +156,9 @@ export default function LeaderboardPage() {
     
     const sortedByDifficulty = byPrompt.filter(p => p.totalAttempts >= 3);
     const mostDifficultPrompt = sortedByDifficulty.length > 0 ? 
-      sortedByDifficulty[sortedByDifficulty.length - 1].prompt : '暂无数据';
+      sortedByDifficulty[sortedByDifficulty.length - 1]?.prompt || '暂无数据' : '暂无数据';
     const easiestPrompt = sortedByDifficulty.length > 0 ? 
-      sortedByDifficulty[0].prompt : '暂无数据';
+      sortedByDifficulty[0]?.prompt || '暂无数据' : '暂无数据';
 
     return {
       byPrompt,

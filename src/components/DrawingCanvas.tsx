@@ -146,6 +146,8 @@ export default function DrawingCanvas({
       // Ensure proper touch handling for drawing
       if (e.touches.length === 1) {
         const touch = e.touches[0];
+        if (!touch) return;
+        
         const rect = canvasElement.getBoundingClientRect();
         const x = touch.clientX - rect.left;
         const y = touch.clientY - rect.top;
@@ -166,6 +168,7 @@ export default function DrawingCanvas({
       // Handle single touch drawing
       if (e.touches.length === 1) {
         const touch = e.touches[0];
+        if (!touch) return;
         
         // Trigger mouse move event for fabric.js
         const mouseEvent = new MouseEvent('mousemove', {
