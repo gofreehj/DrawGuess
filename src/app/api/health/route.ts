@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { databaseManager } from '@/lib/database-manager';
-import { ensureServerDatabaseInitialized } from '@/lib/server-startup';
 import { verifyDatabaseStructure } from '@/lib/init-database';
 import { getDatabaseConfig, getDatabaseInfo } from '@/lib/database-config';
 
@@ -10,8 +9,6 @@ import { getDatabaseConfig, getDatabaseInfo } from '@/lib/database-config';
  */
 export async function GET() {
   try {
-    // 确保服务器数据库已初始化（容错机制）
-    await ensureServerDatabaseInitialized();
     
     // Get database configuration
     const dbConfig = getDatabaseConfig();

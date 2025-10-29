@@ -52,13 +52,3 @@ export async function initializeServerDatabase(): Promise<void> {
 export function isServerDatabaseInitialized(): boolean {
   return isServerInitialized;
 }
-
-/**
- * 确保服务器数据库已初始化
- * 如果未初始化，会自动初始化（用于容错）
- */
-export async function ensureServerDatabaseInitialized(): Promise<void> {
-  if (!isServerInitialized) {
-    await initializeServerDatabase();
-  }
-}

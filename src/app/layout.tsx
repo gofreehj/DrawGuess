@@ -2,11 +2,18 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "../styles/animations.css";
 import { initializeApp } from "../lib/startup";
+import { initializeServerDatabase } from "../lib/server-startup";
 import Providers from "@/components/Providers";
 
-// 在服务器端初始化应用（仅客户端相关的初始化）
+// 在服务器端初始化应用和数据库
 if (typeof window === 'undefined') {
+  // 初始化应用
   initializeApp();
+  
+  // 初始化数据库（仅在运行时，构建时会自动跳过）
+  initializeServerDatabase().catch(error => {
+    console.error('Failed to initialize server database:', error);
+  });
 }
 
 export const metadata: Metadata = {

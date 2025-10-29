@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { databaseManager } from '@/lib/database-manager';
-import { ensureServerDatabaseInitialized, initializeServerDatabase } from '@/lib/server-startup';
+import { initializeServerDatabase } from '@/lib/server-startup';
 import { verifyDatabaseStructure } from '@/lib/init-database';
 import { isAppInitialized } from '@/lib/startup';
 import { getDatabaseConfig, getDatabaseInfo } from '@/lib/database-config';
@@ -10,13 +10,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action');
     
-    // 如果是强制重新初始化
+    // 如果是强制重新初始化（仅用于调试）
     if (action === 'reinit') {
       console.log('🔄 Force reinitializing database...');
       await initializeServerDatabase();
-    } else {
-      // 确保服务器数据库已初始化
-      await ensureServerDatabaseInitialized();
     }
     
     // 验证数据库结构
